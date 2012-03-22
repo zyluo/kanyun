@@ -9,8 +9,8 @@ Protocol format:
 cf.insert('10.0.0.2', {u'usage': {1332389700: '12'}})
 
 request:
-sudo iptables -t raw -I PREROUTING -s 10.0.0.3 -j RETURN
-sudo iptables -t raw -I PREROUTING -s 10.0.0.2 -j RETURN
+sudo iptables -t raw -A PREROUTING -s $instance_ip -m comment --comment "instance_id"
+sudo iptables -t raw -I PREROUTING -s 10.0.0.3 -m comment --comment "instance-0000003e"
 
 db:
 +--------------+
@@ -26,7 +26,7 @@ db:
 
 CMD = "sudo iptables -t raw -nvxL PREROUTING"
 
-ip_bytes = {} # {'10.0.0.2': '10', '10.0.0.3': '5'}
+_ip_bytes = {} # {'10.0.0.2': '10', '10.0.0.3': '5'}
 
 def get_traffic_accounting_info():
     """
@@ -40,20 +40,26 @@ def get_traffic_accounting_info():
     for line in lines:
         counter_info = line.split()
         out_bytes = counter_info[1]
-        instance_ip = counter_info[7]
+        instance_ip = counter_info[6]
+        instance_id = counter_info[9]
         val = int(out_bytes)
 
-        if instance_ip in ip_bytes:
-            val_str = ip_bytes[instance_ip]
-            val = int(out_bytes) - int(val_str)
+        if instance_id in _ip_bytes:
+            prev_out_bytes = _ip_bytes[instance_id]
+            val = int(out_bytes) - prev_out_bytes
             if val < 0:
                 val = int(out_bytes)
         else:
-            ip_bytes[instance_ip] = str(out_bytes)
-            
-        ret[instance_ip] = (int(time.time()), str(val));
+            val = int(out_bytes)
+
+        _ip_bytes[instance_id] = int(out_bytes)            
+       
+        ret[instance_id] = (instance_ip, int(time.time()), str(val))
 
     return ret
 
 if __name__=='__main__':
-    print get_traffic_accounting_info()
+    while True:
+        print get_traffic_accounting_info()
+        import time
+        time.sleep(2)
