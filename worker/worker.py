@@ -135,9 +135,9 @@ if __name__ == '__main__':
 
     worker = Worker(context)
     # TODO: the plugin come form configure file maybe better
-    worker.register_plugin(plugin_traffic_accounting_info)
     #worker.register_plugin(plugin_local_cpu)
-    #worker.register_plugin(plugin_agent_info)
+    worker.register_plugin(plugin_traffic_accounting_info)
+    worker.register_plugin(plugin_agent_info)
     # Socket to send messages to
 #    feedback = context.socket(zmq.PUSH)
 #    feedback.connect("tcp://localhost:5559")

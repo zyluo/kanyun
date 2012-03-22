@@ -1,4 +1,6 @@
 #!/usr/bin/env python
+# encoding: utf-8
+# TAB char: space
 
 import datetime
 import time
@@ -7,14 +9,14 @@ from xml.etree import ElementTree
 import libvirt
 """
 db:
-+------------------------------+
-| cf=cpu/mem/...(每个单独一个cf)  | 
-+------------------------------+----------------+
++-------------------------------------+
+| cf=cpu/mem/...(one item as one cf ) |
++-------------------------------------+---------+
 | scf=total/devname                             |
 +==============+==============+=======+=========+
 |              | col=utc_time | time2 | ...     |
 +==============+==============+=======+=========+
-| key=instance |  val1(差值)   | val2  | ...     |
+| key=instance | val1(subval) | val2  | ...     |
 +===============================================+
 
 protocol:
@@ -130,40 +132,57 @@ class LibvirtMonitor(object):
         rd_req, rd_bytes, wr_req, wr_bytes, errs = dom_conn.blockStats(blk_dev)
         timestamp = self.get_utc_sec()
         return [('blk', blk_dev, (timestamp, rd_bytes, wr_bytes))]
-        
+
 def plugin_call():
+    agent = LibvirtMonitor()
+    ret = agent.collect_info()
+    return ret
+    
+def plugin_test():
     ret = []
-    archive = None
+    old_data = None
     agent = LibvirtMonitor()
     for _ in range(2):
-        first = agent.collect_info()
-        if archive is None:
+        new_data = agent.collect_info()
+        if old_data is None:
             # TODO(lzyeval): do something meaningful
-            archive = first
+            old_data = new_data
         else:
-            for dom_name, bb in first.iteritems():
-                aa = archive.get(dom_name)
-                if bb is None:
+            for dom_name, new_raw_data in first.iteritems():
+                old_raw_data = old_data.get(dom_name)
+                if old_raw_data is None:
                     # TODO(lzyeval): handle exception(?)
                     continue
-                asdf = list()
-                asdf.extend(aa)
-                asdf.extend(bb)
-                metrics = dict.fromkeys(map(lambda (x, y, z): x, asdf)).keys()
+                all_data = list()
+                all_data.extend(old_raw_data)
+                all_data.extend(new_raw_data)
+                # ['cpu', 'mem', 'net', 'blk', 'blk']
+                metrics = dict.fromkeys(map(lambda (x, y, z): x, all_data)).keys()
+                # ['cpu', 'mem', 'net', 'blk']
                 for _m in metrics:
-                    samples = filter(lambda (x, y, z): x == _m, asdf)
+                    samples = filter(lambda (x, y, z): x == _m, all_data)
+                    # if _m == 'cpu'
+                    # [('cpu', 'total', (12345.0, 124335235.99), ('cpu', 'total', (12405.0, 123477777.9)]
+                    # [('blk', 'vda', (12345.0, 124335235.99), ('blk', 'vdb', (12405.0, 123477777.9),
+                    # ('blk', 'vda', (12345.0, 124335235.99), ('blk', 'vdb', (12405.0, 123477777.9)]
                     devs = dict.fromkeys(map(lambda (x, y, z): y,
                                              samples)).keys()
+                    # ['vda', 'vdb']
                     for _d in devs:
                         datas = map(lambda(x, y, z): z,
                                     filter(lambda(a, b, c): b == _d, samples))
+                        # if _d == 'vda':
+                        # [('blk', 'vda', (12345.0, 124335235.99), ('blk', 'vda', (12385.0, 124335235.99))]
                         # TODO(lzyeval): return dict with all data calulated
                         #                with total
                         #print _d, datas
                         ret.append((_d, datas))
                 # FIXME(lzyeval): delete me
                 break
-            archive.update(first)
+            old_data.update(first)
         time.sleep(1)
         
     return ret
+    
+if __name__ == '__main__':
+    plugin_test()

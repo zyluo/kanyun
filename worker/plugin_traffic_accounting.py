@@ -30,8 +30,8 @@ _ip_bytes = {} # {'10.0.0.2': '10', '10.0.0.3': '5'}
 
 def get_traffic_accounting_info():
     """
-    return value format:
-    {'10.0.0.2': (11111, '12'), '10.0.0.3': (11112, '16')}
+    return value format example:
+    {'instance-00000001': ('10.0.0.2', 1332409327, '0')}
     """
     records = subprocess.check_output(shlex.split(CMD), stderr=subprocess.STDOUT)
     lines = records.splitlines()[2:]
@@ -52,8 +52,8 @@ def get_traffic_accounting_info():
         else:
             val = int(out_bytes)
 
-        _ip_bytes[instance_id] = int(out_bytes)            
-       
+        _ip_bytes[instance_id] = int(out_bytes)
+
         ret[instance_id] = (instance_ip, int(time.time()), str(val))
 
     return ret
