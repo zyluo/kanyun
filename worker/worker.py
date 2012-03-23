@@ -80,7 +80,8 @@ class Worker:
     def send(self, msg):
         """PUSH the msg(msg is a list)"""
         print 'send:', msg
-        self.feedback.send_multipart(msg)
+        for _ in range(0,20):# TODO: remove this
+            self.feedback.send_multipart(msg)
     
     def get_leaving_time(self):
         """return leaving seconds before next work time"""

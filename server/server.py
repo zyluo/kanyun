@@ -7,6 +7,7 @@
 # Author: Lev Givon <lev(at)columbia(dot)edu>
 # Last update: Peng Yuwei<yuwei5@staff.sina.com.cn> 2012-3-19
 
+import time
 import ConfigParser
 import json
 import sys
@@ -46,7 +47,11 @@ def plugin_decoder_agent(db, data):
         print 'invalid data:', data
         return
         
-    plugin_agent_srv.plugin_decoder_agent(db, data)
+    pass_time = time.time()
+    for _ in range(0, 50): # TODO:remove this
+        plugin_agent_srv.plugin_decoder_agent(db, data)
+    print 'spend \033[1;33m%f\033[0m seconds' % (time.time() - pass_time)
+    print '-' * 60
     
 def plugin_decoder_traffic_accounting(db, data):
     # verify the data

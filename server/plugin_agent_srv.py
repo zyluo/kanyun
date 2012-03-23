@@ -1,11 +1,11 @@
 # encoding: utf-8
 # TAB char: space
 #
-# Author: Peng Yuwei<yuwei5@staff.sina.com.cn>
-# Last update: Peng Yuwei<yuwei5@staff.sina.com.cn> 2012-3-19
+# Author: Peng Yuwei<yuwei5@staff.sina.com.cn> 2012-3-23
+# Last update: Peng Yuwei<yuwei5@staff.sina.com.cn> 2012-3-23
 
+import time
 import json
-import sys
 import traceback
 import pycassa
 
@@ -48,24 +48,34 @@ example:
 }
 """
 
+"""
 # ColumnFamilys object collection
+# data format: {key: ColumnFamily Object}
+# example: {'cpu', ColumnFamily()}
+"""
 cfs = dict()
 
+"""
 # previous data
 # data format: {key: (value, D-value, instance_id, cf_str, scf_str)}
 # example: {'/instance_0001#host/cpu/total/1': (92345, 12, 'instance_0001#host', 'cpu', 'total')}
+"""
 previous_data = dict()
 
 def get_change(prekey, data):
+    """
     # prekey: /instance_0001#host/cpu/total/
-    # data: ["cpu", "total", [1332465360.033008, 9043400000000]],
+    # data: ["cpu", "total", [1332465360.033008, 9043400000000]]
+    # data: ["mem", "total", [1332465360.033008, 3860180, 131072]]
+    # return: the change. if key is cpu, the val2 is None
+    """
     val1 = 0
     val2 = None
     new_value = data[2]
     if previous_data.has_key(prekey + "/1"):
         o = previous_data[prekey + "/1"]
         val1 = new_value[1] - o[0]
-        print '\t1:%s --> %s (%d)' % (new_value[1], o[0], val1)
+        print '\t1:%s --> %s (%d)' % (o[0], new_value[1], val1)
     else:
         val1 = new_value[1]
         print '\t1:%s' % (val1)
@@ -74,7 +84,7 @@ def get_change(prekey, data):
         if previous_data.has_key(prekey + "/2"):
             o = previous_data[prekey + "/2"]
             val2 = new_value[2] - o[0]
-            print '\t2:%s --> %s (%d)' % (new_value[2], o[0], val2)
+            print '\t2:%s --> %s (%d)' % (o[0], new_value[2], val2)
         else:
             val2 = new_value[2]
             print '\t2:%s' % (val2)
@@ -82,18 +92,32 @@ def get_change(prekey, data):
     return val1, val2
 
 def plugin_decoder_agent(db, data):
+    """decoder the agent data, and save into cassandra database.
+    # db: cassandra ConnectionPool
+    # data example: 
+        {"instance-00000001@pyw.novalocal": 
+            [
+                ["cpu", "total", [1332465360.033008, 9043400000000]], 
+                ["mem", "total", [1332465360.033008, 131072, 131072]], 
+                ["nic", "vnet0", [1332465360.038922, 3860180, 1025563]], 
+                ["blk", "vda", [1332465360.044262, 474624, 4741120]], 
+                ["blk", "vdb", [1332465360.046606, 122880, 0]]
+            ]
+        }
+    """
     if len(data) <= 0:
         print 'invalid data:', data
         return
         
     if db is None:
         return
-        
+    
+    pass_time = time.time()
     pre_data = None
     for instance_id, data in data.iteritems():
-        keypath = '/' # for previous_data's key
+        keypath = '/' # use for previous_data's key
         keypath += instance_id
-        print '*****instance=%s:%d ColumnFamilys*****' % (instance_id, len(cfs))
+        print '***** instance=%s:%d ColumnFamilys *****' % (instance_id, len(cfs))
 
         for i in data:
             # i is ["cpu", "total", [1332465360.033008, 9043400000000]], 
@@ -105,7 +129,7 @@ def plugin_decoder_agent(db, data):
             
             cf = cfs[cf_str]
             
-#           // get change
+            # get change
             prekey = keypath + '/' + cf_str + '/' + scf_str
             val1, val2 = get_change(prekey, i)
             
@@ -123,7 +147,7 @@ def plugin_decoder_agent(db, data):
                 print '\t%s saved\n\t%s saved' % (prekey + '/1', prekey + '/2')
                 print '\tkey=%s, cf=%s 2 records saved' % (instance_id, cf_str)
 
-    print '\t%d buffer' % (len(previous_data))
+    print '\t%d buffer, spend \033[1;33m%f\033[0m seconds' % (len(previous_data), time.time() - pass_time)
     print '-' * 60
     
     
