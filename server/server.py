@@ -15,6 +15,8 @@ import zmq
 import db
 import pycassa
 
+import plugin_agent_srv
+
 """
 Save the vm's system info data to db.
                          +--- <-- Worker's PUSH
@@ -44,9 +46,7 @@ def plugin_decoder_agent(db, data):
         print 'invalid data:', data
         return
         
-    cf = pycassa.ColumnFamily(db, 'vmnetwork')
-    
-    print 'fake save:', data
+    plugin_agent_srv.plugin_decoder_agent(db, data)
     
 def plugin_decoder_traffic_accounting(db, data):
     # verify the data
