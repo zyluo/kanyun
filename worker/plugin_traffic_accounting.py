@@ -47,6 +47,7 @@ def get_traffic_accounting_info():
         if instance_id in _ip_bytes:
             prev_out_bytes = _ip_bytes[instance_id]
             val = int(out_bytes) - prev_out_bytes
+
             if val < 0:
                 val = int(out_bytes)
         else:

@@ -1,7 +1,6 @@
 import unittest
 import time
 import sys
-import random
 from worker import Worker
 
 class TestWorker(unittest.TestCase):

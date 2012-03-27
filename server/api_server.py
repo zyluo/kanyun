@@ -4,19 +4,18 @@
 # Binds PUSH socket to tcp://localhost:5557
 # Sends batch of tasks to workers via that socket
 #
-# Author: Lev Givon <lev(at)columbia(dot)edu>
-# Last update: Peng Yuwei<yuwei5@staff.sina.com.cn> 2012-3-19
+# Author: Peng Yuwei<yuwei5@staff.sina.com.cn> 2012-3-27
+# Last update: Peng Yuwei<yuwei5@staff.sina.com.cn> 2012-3-27
 
-import time
-import ConfigParser
-import json
 import sys
-import traceback
-import zmq
+import time
+import json
 import db
+import traceback
+import ConfigParser
+import zmq
 import pycassa
 
-import plugin_agent_srv
 
 """
 Save the vm's system info data to db.
@@ -36,57 +35,130 @@ Save the vm's system info data to db.
                          +----> DB
 """
 
-class MSG_TYPE:
-    """same as worker.py"""
-    LOCAL_INFO = '0'
-    TRAFFIC_ACCOUNTING = '1'
-    AGENT = '2'
+class STATISTIC:
+    AVERAGE = 0
+    MINIMUM = 1
+    MAXIMUM = 2
+    SUM     = 3
+    SAMPLES = 4
 
-def plugin_decoder_agent(db, data):
-    if len(data) <= 0:
-        print 'invalid data:', data
-        return
+"""cassandra database object"""
+data_db = None
+"""
+# ColumnFamilys object collection
+# data format: {key: ColumnFamily Object}
+# example: {'cpu', ColumnFamily()}
+"""
+cfs = dict()
+
+def api_init():
+    global data_db
+    config = ConfigParser.ConfigParser()
+    config.read("demux.conf")
+    server_cfg = dict(config.items('Demux'))
+    data_db = pycassa.ConnectionPool('data', server_list=[server_cfg['db_host']])
+
+def api_getdata(row_id, cf_str, scf_str, statistic, period=5, time_from=0, time_to=0):
+    """
+    statistic is STATISTIC enum
+    period default=5 minutes
+    time_to default=0(now)
+    """
+    global data_db
+    global cfs
+    
+    if data_db is None:
+        api_init()
+    if not cfs.has_key(cf_str):
+        print 'new connection:', cf_str
+        cfs[cf_str] = pycassa.ColumnFamily(data_db, cf_str)
+    cf = cfs[cf_str]
         
-    pass_time = time.time()
-    plugin_agent_srv.plugin_decoder_agent(db, data)
-    print 'spend \033[1;33m%f\033[0m seconds' % (time.time() - pass_time)
-    print '-' * 60
+    if time_to == 0:
+        time_to = time.time()
     
-def plugin_decoder_traffic_accounting(db, data):
-    # verify the data
-    # protocol:{'instance-00000001': ('10.0.0.2', 1332409327, '0')}
-    if len(data) <= 0:
-        print 'invalid data:', data
-        return
+#    print "cf.get(%s, super_column=%s, column_start=%d, column_finish=%d)" % \
+#        (row_id, scf_str, time_from, int(time_to))
+    rs = cf.get(row_id, super_column=scf_str, column_start=time_from, column_finish=int(time_to))
+    print rs
     
-    cf = pycassa.ColumnFamily(db, 'vmnetwork')
-    print 'save:', data
-    for i in data:
-        if len(i) > 0 and len(data[i]) > 2:
-            # cf.insert('instance-00000001', {'10.0.0.2': {1332409327: '0'}})
-            cf.insert(i, {data[i][0]: {data[i][1]: data[i][2]}})
+    return rs, len(rs)
+    
+class Statistics():
+    def __init__(self):
+        self.count = 0
+        self.sum = 0
+        self.min = 0
+        self.max = 0
+        self.previous = 0
+    def update(self, value):
+        self.count += 1
+        self.sum += value
+        if value > self.previous:
+            self.max = value
+        elif value < self.previous:
+            self.min = value
+        self.previous = value
+    def get_agerage(self):
+        if self.count == 0:
+            return 0
+        else:
+            return self.sum / self.count
+    def get_sum(self):
+        return self.sum
+    def get_max(self):
+        return self.max
+    def get_min(self):
+        return self.min
 
-
-def get_work_msg(cmd, **msg):
-    res = db.read_whole_lb(**msg)
-    if cmd == "delete_lb":
-        res = dict(filter(lambda (x, y): x in ['user_name', 'tenant',
-                                               'load_balancer_id',
-                                               'protocol'], res.items()))
-    return res
-
+def analyize_data(rs, period, statistic):
+    """[private func]analyize the data and call callback func to statistic"""
+    st = Statistics()
+    this_min = dict()
+    
+    # get statistic data of each minute
+    for t, value in rs.iteritems():
+        #print t,"=",value
+        rt = time.gmtime(t)
+        key = rt.tm_min + rt.tm_hour*100 + rt.tm_mday*10000 + rt.tm_mon*1000000 + rt.tm_year*100000000
+        st.update(int(value))
+        this_min[key] = (st.get_agerage(), st.get_max(), st.get_min(), st.get_sum())
+        
+    print "each time:"
+    for m, val in this_min.iteritems():
+        print m, val
+        
+    # get the results
+    t = 0
+    st = Statistics()
+    this_period = dict()
+    for m, val in this_min.iteritems():
+        if t == 0:
+            t = m
+        if m < t + period:
+            st.update(int(val[0]))
+            this_period[m] = (st.get_agerage(), st.get_max(), st.get_min(), st.get_sum())
+        else:
+            t = m
+    print "each period:"
+    for m, val in this_period.iteritems():
+        print m, val
+        
+def api_statistic(row_id, cf_str, scf_str, statistic, period=5, time_from=0, time_to=0):
+    rs, count = api_getdata(row_id, cf_str, scf_str, statistic, period, time_from, time_to)
+    analyize_data(rs, period, statistic)
+    
 if __name__ == '__main__':
-    # register_plugin
-    plugins = {}
-    plugins[MSG_TYPE.TRAFFIC_ACCOUNTING] = plugin_decoder_traffic_accounting
-    plugins[MSG_TYPE.AGENT] = plugin_decoder_agent
-    # 
 
     config = ConfigParser.ConfigParser()
     config.read("demux.conf")
     server_cfg = dict(config.items('Demux'))
 
     context = zmq.Context()
+    
+    data_db = pycassa.ConnectionPool('data', server_list=[server_cfg['db_host']])
+#    cf = pycassa.ColumnFamily(data_db, "cpu")
+#    cf.get_range("instance-00000001@pyw.novalocal")
 
     # Socket to receive messages on
     handler = context.socket(zmq.REP)

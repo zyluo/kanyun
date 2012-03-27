@@ -69,6 +69,7 @@ def get_change(prekey, data):
     # data: ["mem", "total", [1332465360.033008, 3860180, 131072]]
     # return: the change. if key is cpu, the val2 is None
     """
+    global previous_data
     val1 = 0
     val2 = None
     new_value = data[2]
@@ -88,7 +89,12 @@ def get_change(prekey, data):
         else:
             val2 = new_value[2]
             print '\t2:%s' % (val2)
-            
+    
+    # TODO: temp code
+    import random
+    val1 += random.randint(0,30)
+    print '\t\033[1;33mR:  --> %d\033[0m' % (val1)
+    #
     return val1, val2
 
 def plugin_decoder_agent(db, data):
@@ -105,6 +111,9 @@ def plugin_decoder_agent(db, data):
             ]
         }
     """
+    global cfs
+    global previous_data
+    
     if len(data) <= 0:
         print 'invalid data:', data
         return
@@ -136,14 +145,14 @@ def plugin_decoder_agent(db, data):
             value = i[2]
             if val2 is None:
                 previous_data[prekey + '/1'] = (value[1], val1, instance_id, cf_str, scf_str)
-                cf.insert(instance_id, {cf_str: {int(value[0]): str(val1)}})
-                print '\t%s saved' % (prekey)
+                cf.insert(instance_id, {scf_str: {int(value[0]): str(val1)}})
+                print '\t%s=%d(%s) saved' % (prekey, val1, str(val1))
                 print '\tkey=%s, cf=%s saved' % (instance_id, cf_str)
             else:
                 previous_data[prekey + '/1'] = (value[1], val1, instance_id, cf_str, scf_str)
                 previous_data[prekey + '/2'] = (value[2], val2, instance_id, cf_str, scf_str)
-                cf.insert(instance_id, {cf_str + '1': {int(value[0]): str(val1)}})
-                cf.insert(instance_id, {cf_str + '2': {int(value[0]): str(val2)}})
+                cf.insert(instance_id, {scf_str + '1': {int(value[0]): str(val1)}})
+                cf.insert(instance_id, {scf_str + '2': {int(value[0]): str(val2)}})
                 print '\t%s saved\n\t%s saved' % (prekey + '/1', prekey + '/2')
                 print '\tkey=%s, cf=%s 2 records saved' % (instance_id, cf_str)
 
