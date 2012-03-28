@@ -25,8 +25,8 @@ class TestApiServer(unittest.TestCase):
         time_to = 0
         scf_str = 'total'
         cf_str = 'cpu'
-        rs, lenrs = api_server.api_getdata(row_id, cf_str, scf_str, statistic, period=period, time_from=time_from, time_to=time_to)
-        print lenrs, "results", 'spend', time.clock(), "seconds"
+        rs, count, _ = api_server.api_getdata(row_id, cf_str, scf_str, statistic, period=period, time_from=time_from, time_to=time_to)
+        print "%d results, spend %f seconds" % (count, time.clock())
         print '-' * 60
     
     def test_api_statistic(self):
@@ -39,24 +39,24 @@ class TestApiServer(unittest.TestCase):
         cf_str = 'cpu'
         
         statistic = api_server.STATISTIC.SUM
-        api_server.api_statistic(row_id, cf_str, scf_str, statistic, period=period, time_from=time_from, time_to=time_to)
+        rs, count, _ = api_server.api_statistic(row_id, cf_str, scf_str, statistic, period=period, time_from=time_from, time_to=time_to)
+        print "%d SUM results, spend %f seconds" % (count, time.clock())
         print '-' * 60
-        print "spend %f seconds" % time.clock()
         
         statistic = api_server.STATISTIC.MAXIMUM
-        api_server.api_statistic(row_id, cf_str, scf_str, statistic, period=period, time_from=time_from, time_to=time_to)
+        rs, count, _ = api_server.api_statistic(row_id, cf_str, scf_str, statistic, period=period, time_from=time_from, time_to=time_to)
+        print "%d MAXIMUM results, spend %f seconds" % (count, time.clock())
         print '-' * 60
-        print "spend %f seconds" % time.clock()
         
         statistic = api_server.STATISTIC.MINIMUM
-        api_server.api_statistic(row_id, cf_str, scf_str, statistic, period=period, time_from=time_from, time_to=time_to)
+        rs, count, _ = api_server.api_statistic(row_id, cf_str, scf_str, statistic, period=period, time_from=time_from, time_to=time_to)
+        print "%d MINIMUM results, spend %f seconds" % (count, time.clock())
         print '-' * 60
-        print "spend %f seconds" % time.clock()
         
         statistic = api_server.STATISTIC.AVERAGE
-        api_server.api_statistic(row_id, cf_str, scf_str, statistic, period=period, time_from=time_from, time_to=time_to)
+        rs, count, _ = api_server.api_statistic(row_id, cf_str, scf_str, statistic, period=period, time_from=time_from, time_to=time_to)
+        print "%d AVERAGE results, spend %f seconds" % (count, time.clock())
         print '-' * 60
-        print "spend %f seconds" % time.clock()
     def test_demo(self):
         self.assertTrue(True)
 
