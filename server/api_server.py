@@ -5,7 +5,7 @@
 # Sends batch of tasks to workers via that socket
 #
 # Author: Peng Yuwei<yuwei5@staff.sina.com.cn> 2012-3-27
-# Last update: Peng Yuwei<yuwei5@staff.sina.com.cn> 2012-3-27
+# Last update: Peng Yuwei<yuwei5@staff.sina.com.cn> 2012-3-28
 
 import sys
 import time
@@ -53,6 +53,7 @@ class Statistics():
         self.min = 0
         self.max = 0
         self.previous = 0
+        self.diff = 0
     def update(self, value):
         self.count += 1
         self.sum += value
@@ -67,6 +68,7 @@ class Statistics():
             self.max = value
         elif value < self.previous:
             self.min = value
+        self.diff = value - self.previous
         self.previous = value
     def get_value(self, which):
         if which == STATISTIC.AVERAGE:
@@ -83,6 +85,9 @@ class Statistics():
             # error
             print 'error:', which
             return 0
+            
+    def get_diff(self):
+        return self.diff;
     def get_agerage(self):
         if self.count == 0:
             return 0
@@ -188,27 +193,11 @@ if __name__ == '__main__':
     context = zmq.Context()
     
     data_db = pycassa.ConnectionPool('data', server_list=[server_cfg['db_host']])
-#    cf = pycassa.ColumnFamily(data_db, "cpu")
-#    cf.get_range("instance-00000001@pyw.novalocal")
 
     # Socket to receive messages on
     api_server = context.socket(zmq.REP)
     api_server.bind("tcp://%(api_host)s:%(api_port)s" % server_cfg)
     print "listen tcp://%(api_host)s:%(api_port)s" % server_cfg
-
-#    # Socket to send messages on
-#    broadcast = context.socket(zmq.PUB)
-#    broadcast.bind("tcp://%(broadcast_host)s:%(broadcast_port)s" % server_cfg)
-#    print "listen tcp://%(broadcast_host)s:%(broadcast_port)s" % server_cfg
-
-#    # Socket with direct access to the feedback: used to syncronize start of batch
-#    feedback = context.socket(zmq.PULL)
-#    feedback.bind("tcp://%(feedback_host)s:%(feedback_port)s" % server_cfg)
-#    print "listen tcp://%(feedback_host)s:%(feedback_port)s" % server_cfg
-
-#    poller = zmq.Poller()
-#    poller.register(api_server, zmq.POLLIN | zmq.POLLOUT)
-#    poller.register(feedback, zmq.POLLIN)
 
     # data DB
     data_db = pycassa.ConnectionPool('data', server_list=[server_cfg['db_host']])
@@ -217,7 +206,11 @@ if __name__ == '__main__':
         message = api_server.recv()
         msg = json.loads(message)
         
-        [u'S', u'instance-00000001@pyw.novalocal', u'cpu', u'total', 0, 5, 1332897600, 0]
+        if (msg[0] != 'S'):
+            api_server.send (json.dumps([]))
+            continue
+        
+        #[u'S', u'instance-00000001@pyw.novalocal', u'cpu', u'total', 0, 5, 1332897600, 0]
         print '*' * 60
         print msg
         print '*' * 60
@@ -230,55 +223,4 @@ if __name__ == '__main__':
         time_to = msg[7]
         rs, count, _ = api_statistic(row_id, cf_str, scf_str, statistic, period=period, time_from=time_from, time_to=time_to)
         api_server.send (json.dumps(rs))
-#        socks = dict(poller.poll())
-#        
-#        # parse the command form client
-#        if socks.get(api_server) == zmq.POLLIN:
-#            print 'REQ poolin'
-#            msg_type, msg_id, msg_json = api_server.recv_multipart()
-#            msg_body = json.loads(msg_json)
-#            cli_msg = {'code': 200, 'desc': 'OK'}
-#            try:
-#                cmd = msg_body['cmd']
-#                msg = msg_body['msg']
-#                print cmd, msg
-#                print
-#                # access db and get return msg
-#                if cmd in ['read_lb', 'read_lb_list', 'read_load_balancer_id_all',
-#                           'read_http_server_name_all']:
-#                    db_res = getattr(db, cmd)(**msg)
-#                    cli_msg.update(db_res)
-#                elif cmd in ['create_lb', 'delete_lb', 'update_lb_config',
-#                             'update_lb_instances', 'update_lb_http_server_names']:
-#                    getattr(db, cmd)(**msg)
-#                    work_cmd = "update_lb" if cmd.startswith("update_lb") else cmd
-#                    work_msg = get_work_msg(cmd, **msg)
-#                    print ">>>>>>>>>", work_msg
-#                    print
-#                    broadcast.send_multipart([msg_type, msg_id,
-#                                              json.dumps({'cmd': work_cmd,
-#                                                          'msg': work_msg})])
-#                else:
-#                    raise Exception("Invalid command")
-#            except Exception, e:
-#                print traceback.format_exc()
-#                cli_msg['code'] = 500
-#                cli_msg['desc'] = str(e)
-#            print cmd, cli_msg
-#            print
-#            api_server.send_multipart([msg_type, msg_id,
-#                                    json.dumps({'cmd': cmd,
-#                                                'msg': cli_msg})])
 
-#        # parse the data from worker and save to database
-#        if socks.get(feedback) == zmq.POLLIN:
-#            msg_type, report = feedback.recv_multipart()
-#            
-#            if plugins.has_key(msg_type) and len(report) > 0:
-#                report_str = ''.join(report)
-#                print 'recv(%s):%s' % (msg_type, report_str)
-#                data = json.loads(report_str)
-#                plugins[msg_type](data_db, data)
-#            else:
-#                print 'invaild data(%s):%s' % (msg_type, report_str)
-#            

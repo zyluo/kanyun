@@ -4,6 +4,8 @@ import zmq
 
 """
 protocol:
+[CMD, row_id, cf_str, scf_str, statistic, period, time_from, time_to]
+example:
 [u'S', u'instance-00000001@pyw.novalocal', u'cpu', u'total', 0, 5, 1332897600, 0]
 """
 

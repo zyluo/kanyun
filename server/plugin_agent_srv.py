@@ -123,6 +123,8 @@ def plugin_decoder_agent(db, data):
     
     pass_time = time.time()
     pre_data = None
+    val1 = 0
+    val2 = 0
     for instance_id, data in data.iteritems():
         keypath = '/' # use for previous_data's key
         keypath += instance_id
@@ -140,7 +142,11 @@ def plugin_decoder_agent(db, data):
             
             # get change
             prekey = keypath + '/' + cf_str + '/' + scf_str
-            val1, val2 = get_change(prekey, i)
+            if cf_str in ['cpu', 'mem', 'blk']:
+                val1 = i[2][1]
+                val2 = i[2][1] if len(i[2]) > 2 else None
+            else:
+                val1, val2 = get_change(prekey, i)
             
             value = i[2]
             if val2 is None:

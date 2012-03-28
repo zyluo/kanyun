@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 # encoding: utf-8
 # TAB char: space
+# Last update: Peng Yuwei<yuwei5@staff.sina.com.cn> 2012-3-28
 
 import datetime
 import time
@@ -42,11 +43,40 @@ protocol:
 ('blk', 'vdb', (1332400088.158202, 2159616L, 1481297920L))], 
 """
 
+
+class Diff():
+    """TODO:same as class Statistics() in server, merge."""
+    def __init__(self):
+        self.first = True
+        self.count = 0
+        self.previous = 0
+        self.diff = 0
+        self.time_pass = time.time()
+    def update(self, value):
+        self.count += 1
+        if self.first:
+            self.first = False
+            self.previous = value
+            self.time_pass = time.time()
+            return
+
+        self.diff = value - self.previous
+        self.time_pass = time.time() - self.time_pass
+        self.previous = value
+            
+    def get_diff(self):
+        return self.diff;
+    def get_time_pass(self):
+        return self.time_pass;
+
+
+
 class LibvirtMonitor(object):
 
     def __init__(self, uri='qemu:///system'):
         self.conn = libvirt.openReadOnly(uri)
         self.hostname = self.conn.getHostname()
+        self.diff = Diff()
         """
         (model, memory_kb, cpus, mhz, nodes,
          sockets, cores, threads) = conn.getInfo()
@@ -112,8 +142,14 @@ class LibvirtMonitor(object):
             # TODO(lzyeval): handle exception
             pass
         timestamp = self.get_utc_sec()
+        
+        self.diff.update(dom_cpu_time)
+        #%CPU = 100 * cpu_time_diff / (t * nr_cores * 10e9)
+        cpu = 100.0 * self.diff.get_diff() / (self.diff.get_time_pass() * 1 * 10e9)
         # NOTE(lzyeval): libvirt currently can only see total of all vcpu time
-        return [('cpu', 'total', (timestamp, dom_cpu_time)),
+#        return [('cpu', 'total', (timestamp, dom_cpu_time)),
+#                ('mem', 'total', (timestamp, dom_max_mem_kb, dom_memory_kb))]
+        return [('cpu', 'total', (timestamp, cpu)),
                 ('mem', 'total', (timestamp, dom_max_mem_kb, dom_memory_kb))]
 
     def _collect_nic_dev_info(self, dom_conn, nic_dev):
