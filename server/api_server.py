@@ -36,11 +36,57 @@ Save the vm's system info data to db.
 """
 
 class STATISTIC:
-    AVERAGE = 0
-    MINIMUM = 1
-    MAXIMUM = 2
-    SUM     = 3
+    SUM     = 0
+    MAXIMUM = 1
+    MINIMUM = 2
+    AVERAGE = 3
     SAMPLES = 4
+
+class Statistics():
+    def __init__(self):
+        self.count = 0
+        self.sum = 0
+        self.min = 0
+        self.max = 0
+        self.previous = 0
+    def update(self, value):
+        self.count += 1
+        self.sum += value
+        if value > self.previous:
+            self.max = value
+        elif value < self.previous:
+            self.min = value
+        self.previous = value
+    def get_value(self, which):
+        if which == STATISTIC.AVERAGE:
+            return self.get_agerage()
+        elif which == STATISTIC.MINIMUM:
+            return self.get_min()
+        elif which == STATISTIC.MAXIMUM:
+            return self.get_max()
+        elif which == STATISTIC.SUM:
+            return self.get_sum()
+        elif which == STATISTIC.SAMPLES:
+            return self.get_samples()
+        else:
+            # error
+            print 'error:', which
+            return 0
+    def get_agerage(self):
+        if self.count == 0:
+            return 0
+        else:
+            return self.sum / self.count
+    def get_sum(self):
+        return self.sum
+    def get_max(self):
+        return self.max
+    def get_min(self):
+        return self.min
+    def get_samples(self):
+        # TODO
+        return 0;
+
 
 """cassandra database object"""
 data_db = None
@@ -80,76 +126,74 @@ def api_getdata(row_id, cf_str, scf_str, statistic, period=5, time_from=0, time_
 #    print "cf.get(%s, super_column=%s, column_start=%d, column_finish=%d)" % \
 #        (row_id, scf_str, time_from, int(time_to))
     rs = cf.get(row_id, super_column=scf_str, column_start=time_from, column_finish=int(time_to))
-    print rs
+    #print rs
     
     return rs, len(rs)
     
-class Statistics():
-    def __init__(self):
-        self.count = 0
-        self.sum = 0
-        self.min = 0
-        self.max = 0
-        self.previous = 0
-    def update(self, value):
-        self.count += 1
-        self.sum += value
-        if value > self.previous:
-            self.max = value
-        elif value < self.previous:
-            self.min = value
-        self.previous = value
-    def get_agerage(self):
-        if self.count == 0:
-            return 0
-        else:
-            return self.sum / self.count
-    def get_sum(self):
-        return self.sum
-    def get_max(self):
-        return self.max
-    def get_min(self):
-        return self.min
-
 def analyize_data(rs, period, statistic):
-    """[private func]analyize the data and call callback func to statistic"""
+    """[private func]analyize the data"""
     st = Statistics()
-    this_min = dict()
+#    this_min = dict()
     
-    # get statistic data of each minute
-    for t, value in rs.iteritems():
-        #print t,"=",value
-        rt = time.gmtime(t)
-        key = rt.tm_min + rt.tm_hour*100 + rt.tm_mday*10000 + rt.tm_mon*1000000 + rt.tm_year*100000000
-        st.update(int(value))
-        this_min[key] = (st.get_agerage(), st.get_max(), st.get_min(), st.get_sum())
-        
-    print "each time:"
-    for m, val in this_min.iteritems():
-        print m, val
-        
-    # get the results
+#    # get statistic data of each minute
+#    for t, value in rs.iteritems():
+#        #print t,"=",value
+#        rt = time.gmtime(t)
+#        key = rt.tm_min + rt.tm_hour*100 + rt.tm_mday*10000 + rt.tm_mon*1000000 + rt.tm_year*100000000
+#        st.update(int(value))
+#        this_min[key] = (st.get_agerage(), st.get_max(), st.get_min(), st.get_sum())
+#        
+#    print "each time:"
+#    for m, val in this_min.iteritems():
+#        print m, val
+#        
     t = 0
-    st = Statistics()
+    key_time = 0
     this_period = dict()
-    for m, val in this_min.iteritems():
+    for timestmp, value in rs.iteritems():
+        rt = time.gmtime(timestmp)
+        key = rt.tm_min + rt.tm_hour*100 + rt.tm_mday*10000 + rt.tm_mon*1000000 + rt.tm_year*100000000
         if t == 0:
-            t = m
-        if m < t + period:
-            st.update(int(val[0]))
-            this_period[m] = (st.get_agerage(), st.get_max(), st.get_min(), st.get_sum())
-        else:
-            t = m
-    print "each period:"
+            print '\tget first value'
+            t = key
+            key_time = time.gmtime(timestmp)
+        if key >= t + period:
+            print '\tnext'
+            t = key
+            key_time = time.gmtime(timestmp)
+        st.update(int(value))
+        key2 = time.mktime((key_time.tm_year, key_time.tm_mon, key_time.tm_mday, key_time.tm_hour, key_time.tm_min,0,0,0,0))
+        this_period[key2] = st.get_value(statistic)
+        print '\tcompute time=:%d, value=%s(%d) "update(%s)=%d"' % \
+                (key, value, int(value), key2, this_period[key2])
+            
+    print statistic, ":each period(", period, "):"
     for m, val in this_period.iteritems():
-        print m, val
+        print '\t', m, val
+        
+    return this_period
+ 
+#    # get the results
+#    st = Statistics()
+#    this_period = dict()
+#    for m, val in this_min.iteritems():
+#        if t == 0:
+#            t = m
+#        if m < t + period:
+#            st.update(int(val[0]))
+#            this_period[m] = (st.get_agerage(), st.get_max(), st.get_min(), st.get_sum())
+#        else:
+#            t = m
+#    print "each period:"
+#    for m, val in this_period.iteritems():
+#        print m, val
         
 def api_statistic(row_id, cf_str, scf_str, statistic, period=5, time_from=0, time_to=0):
     rs, count = api_getdata(row_id, cf_str, scf_str, statistic, period, time_from, time_to)
-    analyize_data(rs, period, statistic)
+    buf = analyize_data(rs, 1, statistic)
+    analyize_data(buf, period, statistic)
     
 if __name__ == '__main__':
-
     config = ConfigParser.ConfigParser()
     config.read("demux.conf")
     server_cfg = dict(config.items('Demux'))
