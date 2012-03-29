@@ -41,9 +41,23 @@ protocol:
 
 class MSG_TYPE:
     """same as worker.py"""
-    LOCAL_INFO = '0'
-    TRAFFIC_ACCOUNTING = '1'
-    AGENT = '2'
+    HEART_BEAT = '0'
+    LOCAL_INFO = '1'
+    TRAFFIC_ACCOUNTING = '2'
+    AGENT = '3'
+
+living_status = dict()
+
+def autotask_heartbeat():
+    for worker_id, update_time in living_status.iteritems():
+        if time.time() - update_time > 2 * 60: # 2min
+            print '\033[0;31m[WARNING]\033[0mworker', worker_id, "is dead"
+            
+
+def plugin_heartbeat(db, data):
+    worker_id, update_time = data
+    living_status[worker_id] = time.time()
+    print "heartbeat:", data
 
 def plugin_decoder_agent(db, data):
     if len(data) <= 0:
@@ -80,9 +94,14 @@ def get_work_msg(cmd, **msg):
 
 if __name__ == '__main__':
     # register_plugin
-    plugins = {}
+    plugins = dict()
+    plugins[MSG_TYPE.HEART_BEAT] = plugin_heartbeat
     plugins[MSG_TYPE.TRAFFIC_ACCOUNTING] = plugin_decoder_traffic_accounting
     plugins[MSG_TYPE.AGENT] = plugin_decoder_agent
+    
+    # register autotask
+    autotasks = list()
+    autotasks.append(autotask_heartbeat)
     # 
 
     config = ConfigParser.ConfigParser()
@@ -114,7 +133,7 @@ if __name__ == '__main__':
     data_db = pycassa.ConnectionPool('data', server_list=[server_cfg['db_host']])
 
     while True:
-        socks = dict(poller.poll())
+        socks = dict(poller.poll(10))
         
         # parse the command form client
         if socks.get(handler) == zmq.POLLIN:
@@ -166,3 +185,5 @@ if __name__ == '__main__':
             else:
                 print 'invaild data(%s):%s' % (msg_type, report_str)
             
+        for task in autotasks:
+            task()

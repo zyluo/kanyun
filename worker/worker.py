@@ -20,11 +20,16 @@ protocol:
 
 class MSG_TYPE:
     """same as server.py"""
-    LOCAL_INFO = '0'
-    TRAFFIC_ACCOUNTING = '1'
-    AGENT = '2'
+    HEART_BEAT = '0'
+    LOCAL_INFO = '1'
+    TRAFFIC_ACCOUNTING = '2'
+    AGENT = '3'
 
 # plugin
+def plugin_heartbeat():
+    info = ['WORKER1', time.time()]
+    return MSG_TYPE.HEART_BEAT, info
+    
 def plugin_local_cpu():
     # FIXME:how to use import smart?
     """
@@ -85,8 +90,7 @@ class Worker:
     def send(self, msg):
         """PUSH the msg(msg is a list)"""
         print 'send:', msg
-        for _ in range(0,20):# TODO: remove this
-            self.feedback.send_multipart(msg)
+        self.feedback.send_multipart(msg)
     
     def get_leaving_time(self):
         """return leaving seconds before next work time"""
@@ -142,6 +146,7 @@ if __name__ == '__main__':
     worker = Worker(context)
     # TODO: the plugin come form configure file maybe better
     #worker.register_plugin(plugin_local_cpu)
+    worker.register_plugin(plugin_heartbeat)
     worker.register_plugin(plugin_traffic_accounting_info)
     worker.register_plugin(plugin_agent_info)
     # Socket to send messages to
