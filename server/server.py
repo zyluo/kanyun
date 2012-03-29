@@ -47,8 +47,11 @@ class MSG_TYPE:
     AGENT = '3'
 
 living_status = dict()
+config = ConfigParser.ConfigParser()
 
 def autotask_heartbeat():
+    global config
+    global living_status
     for worker_id, update_time in living_status.iteritems():
         if time.time() - update_time > 2 * 60: # 2min
             # TODO: dispose timeout worker here 
@@ -94,6 +97,7 @@ def get_work_msg(cmd, **msg):
     return res
 
 if __name__ == '__main__':
+    global config
     # register_plugin
     plugins = dict()
     plugins[MSG_TYPE.HEART_BEAT] = plugin_heartbeat
@@ -105,7 +109,6 @@ if __name__ == '__main__':
     autotasks.append(autotask_heartbeat)
     # 
 
-    config = ConfigParser.ConfigParser()
     config.read("demux.conf")
     server_cfg = dict(config.items('Demux'))
 

@@ -59,7 +59,7 @@ def plugin_agent_info():
 class Worker:
     """Get the vm's system info, and send to the server.
     """
-    # before the first run ,the rate is 1. after the first run, rate is 5(seconds)
+    # before the first run ,the rate is 1000(milliseconds). after the first run, rate is 5000(milliseconds)
     working_rate = 1000
     
     def clear_plugin(self):
