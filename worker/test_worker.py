@@ -1,10 +1,73 @@
 import unittest
 import time
 import sys
+import mox
+import zmq
+import worker
 from worker import Worker
 
-class TestWorker(unittest.TestCase):
+class zmq_Poller_mox():
+    def register(self, p1, p2):
+        pass
+    def poll(self, p1):
+        return dict()
+        
+class zmq_Context_mox():
+    def socket(self, mode = zmq.SUB):
+        print 'socket'
+        return xxx()
+class xxx():
+    def connect(self, conn_str):
+        print 'connect'
+        pass
+    def setsockopt(self, para1, para2):
+        pass
+
+class WorkerTest(unittest.TestCase):
     def setUp(self):
+        print 'Unit test of worker.'
+        self.mox = mox.Mox()
+        m = self.mox
+        m.StubOutWithMock(zmq, 'Poller')
+        m.StubOutWithMock(zmq, 'Context')
+        zmq.Context().AndReturn(zmq_Context_mox())
+        zmq.Poller().AndReturn(zmq_Poller_mox())
+#        zmq.Context().AndReturn(1234)
+#        m.ReplayAll()
+#        print datetime.datetime.now()
+#        # Verify the time was actually checked.
+#        m.VerifyAll()
+#        self.context = self.mox.CreateMock(zmq.Context)
+    def tearDown(self):
+        self.mox.UnsetStubs()
+
+    def testWorkerClass(self):
+#        self.feedback = self.context.socket(zmq.PUSH)
+#        self.feedback.connect("tcp://127.0.0.1:5559")
+        
+#        self.broadcast = self.context.socket(zmq.SUB)
+#        self.broadcast.connect("tcp://localhost:5558")
+#        self.broadcast.setsockopt(zmq.SUBSCRIBE, "lb")
+#        
+#        self.poller = zmq.Poller()
+#        self.poller.register(self.broadcast, zmq.POLLIN)
+    
+        self.mox.ReplayAll()
+        #self.worker = Worker(self.context)
+        worker.main()
+        self.mox.VerifyAll()
+
+#    def testCreatePersonWithDbException(self):
+#        test_person = 'pyw'
+#        self.dao.InsertPerson(test_person).AndRaise(PersistenceException('Snakes!'))
+#        self.mox.ReplayAll()
+#        self.assertRaises(BusinessException, self.manager.CreatePerson, test_person, 'stevepm')
+#        self.mox.VerifyAll()
+    
+class WorkerIntegrationTest():
+#class WorkerIntegrationTest(unittest.TestCase):
+    def setUp(self):
+        print 'Integration test of worker.'
         pass
 
     def test_istime_to_work(self):

@@ -59,9 +59,14 @@ def autotask_heartbeat():
             
 
 def plugin_heartbeat(db, data):
-    worker_id, update_time = data
+    if len(data) < 3:
+        print "[ERR]invalid heartbeat data"
+        return
+    worker_id, update_time, status = data
     living_status[worker_id] = time.time()
     print "heartbeat:", data
+    if 0 == status:
+        del living_status[worker_id]
 
 def plugin_decoder_agent(db, data):
     if len(data) <= 0:
@@ -137,7 +142,7 @@ if __name__ == '__main__':
     data_db = pycassa.ConnectionPool('data', server_list=[server_cfg['db_host']])
 
     while True:
-        socks = dict(poller.poll(5000))
+        socks = dict(poller.poll(20000))
         
         # parse the command form client
         if socks.get(handler) == zmq.POLLIN:

@@ -26,8 +26,9 @@ class MSG_TYPE:
     AGENT = '3'
 
 # plugin
-def plugin_heartbeat():
-    info = ['WORKER1', time.time()]
+def plugin_heartbeat(status = 1):
+    """status: 0:I will exit; 1:working"""
+    info = ['WORKER1', time.time(), status]
     return MSG_TYPE.HEART_BEAT, info
     
 def plugin_local_cpu():
@@ -62,6 +63,15 @@ class Worker:
     # before the first run ,the rate is 1000(milliseconds). after the first run, rate is 5000(milliseconds)
     working_rate = 1000
     
+    def __init__(self, context):
+        """ context is zeroMQ socket context"""
+        self.plugins = []
+        self.last_work_min = -1 # this value is -1 until first update
+        self.update_time()
+        if not (context is None):
+            self.feedback = context.socket(zmq.PUSH)
+            self.feedback.connect("tcp://127.0.0.1:5559")
+    
     def clear_plugin(self):
         self.plugins.clear()
     def register_plugin(self, plugin):
@@ -78,15 +88,6 @@ class Worker:
         else:
             self.last_work_min = time.localtime().tm_min
             
-    def __init__(self, context):
-        """ context is zeroMQ socket context"""
-        self.plugins = []
-        self.last_work_min = -1 # this value is -1 until first update
-        self.update_time()
-        if not (context is None):
-            self.feedback = context.socket(zmq.PUSH)
-            self.feedback.connect("tcp://127.0.0.1:5559")
-    
     def send(self, msg):
         """PUSH the msg(msg is a list)"""
         print 'send:', msg
@@ -125,21 +126,24 @@ class Worker:
             #self.send(info)
         
         self.update_time()
+    
+def main():
+#    if len(sys.argv) <> 2:
+#        print "usage: python %s [1-3]" % sys.argv[0]
+#        sys.exit(0)
 
-if __name__ == '__main__':
-    if len(sys.argv) <> 2:
-        print "usage: python %s [1-3]" % sys.argv[0]
-        sys.exit(0)
-
-    worker_id = sys.argv[1]
-    if worker_id not in ['1', '2', '3']:
-        print "usage: python %s [1-3]" % sys.argv[0]
-        sys.exit(0)
+#    worker_id = sys.argv[1]
+#    if worker_id not in ['1', '2', '3']:
+#        print "usage: python %s [1-3]" % sys.argv[0]
+#        sys.exit(0)
+    worker_id = '1'
 
     context = zmq.Context()
+    print context
 
     # Socket for control input
     broadcast = context.socket(zmq.SUB)
+    print broadcast
     broadcast.connect("tcp://localhost:5558")
     broadcast.setsockopt(zmq.SUBSCRIBE, "lb")
 
@@ -180,3 +184,5 @@ if __name__ == '__main__':
         worker.info_push()
         
         
+if __name__ == '__main__':
+    main()
