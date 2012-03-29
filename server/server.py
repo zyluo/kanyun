@@ -51,6 +51,7 @@ living_status = dict()
 def autotask_heartbeat():
     for worker_id, update_time in living_status.iteritems():
         if time.time() - update_time > 2 * 60: # 2min
+            # TODO: dispose timeout worker here 
             print '\033[0;31m[WARNING]\033[0mworker', worker_id, "is dead"
             
 
@@ -133,7 +134,7 @@ if __name__ == '__main__':
     data_db = pycassa.ConnectionPool('data', server_list=[server_cfg['db_host']])
 
     while True:
-        socks = dict(poller.poll(10))
+        socks = dict(poller.poll(5000))
         
         # parse the command form client
         if socks.get(handler) == zmq.POLLIN:

@@ -60,7 +60,7 @@ class Worker:
     """Get the vm's system info, and send to the server.
     """
     # before the first run ,the rate is 1. after the first run, rate is 5(seconds)
-    working_rate = 1
+    working_rate = 1000
     
     def clear_plugin(self):
         self.plugins.clear()
@@ -74,7 +74,7 @@ class Worker:
                 self.last_work_min = time.localtime().tm_min - 1
                 if self.last_work_min < 0:
                     self.last_work_min = 59
-                self.working_rate = 5
+                self.working_rate = 5000
         else:
             self.last_work_min = time.localtime().tm_min
             
