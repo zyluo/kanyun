@@ -13,6 +13,11 @@ import sys
 import time
 import zmq
 
+"""
+protocol:
+    http://wiki.sinaapp.com/doku.php?id=monitoring
+"""
+
 class MSG_TYPE:
     """same as server.py"""
     LOCAL_INFO = '0'

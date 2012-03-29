@@ -56,7 +56,7 @@ example:
 cfs = dict()
 
 """
-# previous data
+# previous data in memory
 # data format: {key: (value, D-value, instance_id, cf_str, scf_str)}
 # example: {'/instance_0001#host/cpu/total/1': (92345, 12, 'instance_0001#host', 'cpu', 'total')}
 """

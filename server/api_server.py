@@ -35,6 +35,7 @@ Save the vm's system info data to db.
                          +----> DB
 
 protocol:
+    http://wiki.sinaapp.com/doku.php?id=monitoring
 [u'S', u'instance-00000001@pyw.novalocal', u'cpu', u'total', 0, 5, 1332897600, 0]
 """
 

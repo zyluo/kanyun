@@ -34,6 +34,9 @@ Save the vm's system info data to db.
                          |
                          +----> Worker's SUB
                          +----> DB
+                         
+protocol:
+    http://wiki.sinaapp.com/doku.php?id=monitoring
 """
 
 class MSG_TYPE:
