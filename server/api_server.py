@@ -50,11 +50,11 @@ class Statistics():
     def __init__(self):
         self.first = True
         self.count = 0
-        self.sum = 0
-        self.min = 0
-        self.max = 0
-        self.previous = 0
-        self.diff = 0
+        self.sum = 0.0
+        self.min = 0.0
+        self.max = 0.0
+        self.previous = 0.0
+        self.diff = 0.0
     def update(self, value):
         self.count += 1
         self.sum += value
@@ -141,8 +141,8 @@ def api_getdata(row_id, cf_str, scf_str, statistic, period=5, time_from=0, time_
         time_to = time.time()
     
 #    print "cf.get(%s, super_column=%s, column_start=%d, column_finish=%d)" % \
-#        (row_id, scf_str, time_from, int(time_to))
-    rs = cf.get(row_id, super_column=scf_str, column_start=time_from, column_finish=int(time_to), column_count=20000)
+#        (row_id, scf_str, time_from, float(time_to))
+    rs = cf.get(row_id, super_column=scf_str, column_start=time_from, column_finish=int(float(time_to)), column_count=20000)
     #print rs
     count = len(rs)
     
@@ -166,11 +166,11 @@ def analyize_data(rs, period, statistic):
             print '\tnext'
             t = key
             key_time = time.gmtime(timestmp)
-        st.update(int(value))
+        st.update(float(value))
         key2 = time.mktime((key_time.tm_year, key_time.tm_mon, key_time.tm_mday, key_time.tm_hour, key_time.tm_min,0,0,0,0))
         this_period[key2] = st.get_value(statistic)
-        print '\tcompute time=:%d, value=%s(%d) "update(%s)=%d"' % \
-                (key, value, int(value), key2, this_period[key2])
+        print '\tcompute time=:%d, value=%s(%f) "update(%s)=%d"' % \
+                (key, value, float(value), key2, this_period[key2])
             
     print statistic, ":each period(", period, "):"
     for m, val in this_period.iteritems():
