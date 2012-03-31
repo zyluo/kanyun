@@ -3,6 +3,7 @@ import time
 import sys
 import random
 import mox
+import pycassa
 import api_server
 
 class StatisticsTest(unittest.TestCase):
@@ -26,17 +27,37 @@ class StatisticsTest(unittest.TestCase):
             assert s.get_min() == 1
             assert s.get_agerage() == isum / i
         print "Statistics test \t[\033[1;33mOK\033[0m]"
-        
+
+def InitApiMox():
+    pass
+    
+class ColumnFamilyMox():
+    def __init__(self, a='', b=''):
+        pass
+    pass
+#    return "ColumnFamilyMox"
+    
 class TestApiServer(unittest.TestCase):
     def setUp(self):
-        time.clock()
-        pass
+        self.mox = mox.Mox()
+        
+    def tearDown(self):
+        self.mox.UnsetStubs()
 
-#    def test_api_0(self):
-#        row_id = 'row_key'
-#        statistic = api_server.STATISTIC.AVERAGE
-#        period = 5
-#        api_server.api_test1(row_id, "cf1", "total", statistic, period=period, time_from=0, time_to=0)
+    def testGetCf(self):
+        m = self.mox
+        self.mox.StubOutWithMock(api_server, 'init_api')
+        api_server.init_api().AndReturn(InitApiMox())
+        
+        self.mox.StubOutWithMock(pycassa, 'ColumnFamily')
+        pycassa.ColumnFamily().AndReturn(ColumnFamilyMox())
+        pycassa.ColumnFamily('1','2').AndReturn(ColumnFamilyMox())
+
+        self.mox.ReplayAll()
+        api_server.data_db = 'db'
+        api_server.get_cf2("testcf")
+        self.mox.VerifyAll()
+        
 #    
     def test_api_1(self):
         time.clock()
@@ -86,9 +107,10 @@ class TestApiServer(unittest.TestCase):
         self.assertEqual(['vda', 'vdb'], ['vda', 'vdb'])
 
 if __name__ == '__main__':
+    time.clock()
     ApiTestSuite = unittest.TestSuite()
     ApiTestSuite.addTest(StatisticsTest("testStatistics"))
-#    ApiTestSuite.addTest(ApiServerTest("testSend"))
+    ApiTestSuite.addTest(TestApiServer("testGetCf"))
 #    ApiTestSuite.addTest(ApiServerTest("testIsTimeToWorkFirst"))
 #    ApiTestSuite.addTest(ApiServerTest("testInfoPush"))
         

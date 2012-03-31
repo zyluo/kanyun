@@ -113,20 +113,33 @@ data_db = None
 """
 cfs = dict()
 
-def api_init():
+def init_api():
     global data_db
     config = ConfigParser.ConfigParser()
     config.read("demux.conf")
     server_cfg = dict(config.items('Demux'))
     data_db = pycassa.ConnectionPool('data', server_list=[server_cfg['db_host']])
 
+def get_cf2(cf_str):
+    """[private]"""
+    global data_db
+    global cfs
+    
+    if data_db is None:
+        init_api()
+    if not cfs.has_key(cf_str):
+        print 'new connection:', cf_str
+        cfs[cf_str] = pycassa.ColumnFamily()
+    cf = cfs[cf_str]
+    return cf
+    
 def get_cf(cf_str):
     """[private]"""
     global data_db
     global cfs
     
     if data_db is None:
-        api_init()
+        init_api()
     if not cfs.has_key(cf_str):
         print 'new connection:', cf_str
         cfs[cf_str] = pycassa.ColumnFamily(data_db, cf_str)
