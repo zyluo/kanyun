@@ -2,9 +2,31 @@ import unittest
 import time
 import sys
 import random
+import mox
 import api_server
 
+class StatisticsTest(unittest.TestCase):
+    def setUp(self):
+        self.mox = mox.Mox()
 
+    def tearDown(self):
+        self.mox.UnsetStubs()
+        
+    def testStatistics(self):
+        s = api_server.Statistics()
+        isum = 0.0
+        val = 1
+        for i in range(1,11):
+            isum += i
+            s.update(i)
+            print "%02d. value=%02d, sum=%02d, max=%02d, min=%02d, diff=%02d, agerage=%00.f" \
+                % (i, i, s.get_sum(), s.get_max(), s.get_min(), s.get_diff(),  s.get_agerage())
+            assert s.get_sum() == isum
+            assert s.get_max() == i
+            assert s.get_min() == 1
+            assert s.get_agerage() == isum / i
+        print "Statistics test \t[\033[1;33mOK\033[0m]"
+        
 class TestApiServer(unittest.TestCase):
     def setUp(self):
         time.clock()
@@ -64,4 +86,11 @@ class TestApiServer(unittest.TestCase):
         self.assertEqual(['vda', 'vdb'], ['vda', 'vdb'])
 
 if __name__ == '__main__':
-    unittest.main()
+    ApiTestSuite = unittest.TestSuite()
+    ApiTestSuite.addTest(StatisticsTest("testStatistics"))
+#    ApiTestSuite.addTest(ApiServerTest("testSend"))
+#    ApiTestSuite.addTest(ApiServerTest("testIsTimeToWorkFirst"))
+#    ApiTestSuite.addTest(ApiServerTest("testInfoPush"))
+        
+    runner = unittest.TextTestRunner()
+    runner.run(ApiTestSuite)

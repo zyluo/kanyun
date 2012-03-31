@@ -69,13 +69,13 @@ class Worker:
     
     def __init__(self, context = None, feedback_host='127.0.0.1', feedback_port=5559, logger = None):
         """ context is zeroMQ socket context"""
-        self.plugins = []
+        self.plugins = list()
         self.last_work_min = None # this value is None until first update
         self.update_time()
         self.logger = logger
         if self.logger is None:
-            self.logger=logging.getLogger()
-            handler=logging.FileHandler("/tmp/worker.log")
+            self.logger = logging.getLogger()
+            handler = logging.FileHandler("/tmp/worker.log")
             self.logger.addHandler(handler)
             self.logger.setLevel(logging.NOTSET)
         if not (context is None):
@@ -83,7 +83,7 @@ class Worker:
             self.feedback.connect("tcp://%s:%s" % (feedback_host, feedback_port))
     
     def clear_plugin(self):
-        self.plugins.clear()
+        self.plugins = list()
     def register_plugin(self, plugin):
         self.plugins.append(plugin)
     
@@ -125,7 +125,7 @@ class Worker:
     def info_push(self):
         """Do the work: if is time to work ,get and send the vms's sysinfo"""
         if not self.is_timeto_work():
-            return
+            return False
         now = time.localtime()
         self.logger.debug( '%02d:%02d:%02d working...' % (now[3], now[4], now[5]) )
 
@@ -136,6 +136,7 @@ class Worker:
             #self.send(info)
         
         self.update_time()
+        return True
     
 running = True
 

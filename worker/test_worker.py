@@ -1,8 +1,17 @@
+# encoding: utf-8
+# TAB char: space
+#
+# test worker
+#
+# Author: Peng Yuwei<yuwei5@staff.sina.com.cn> 2012-3-19
+# Last update: Peng Yuwei<yuwei5@staff.sina.com.cn> 2012-3-31
+#
+
 import unittest
 import time
 import sys
+import json
 import mox
-import zmq
 import worker
 from worker import Worker
 
@@ -21,7 +30,6 @@ def PluginAgentInfo():
     return worker.MSG_TYPE.AGENT, info
 
 
-
 class ZmqPollerMox():
     def register(self, p1, p2):
         pass
@@ -29,9 +37,11 @@ class ZmqPollerMox():
         return dict()
         
 class ZmqContextMox():
-    def socket(self, mode = zmq.SUB):
+    def socket(self, mode):
         return ZmqContextSocketMox()
 class ZmqContextSocketMox():
+    def __init__(self):
+        self.count = 0
     def connect(self, conn_str):
         print 'connect', conn_str
         pass
@@ -39,6 +49,7 @@ class ZmqContextSocketMox():
         pass
     def send_multipart(self, msg):
         print "send", msg
+        self.count += len(msg)
 
 class WorkerTest(unittest.TestCase):
     def setUp(self):
@@ -46,15 +57,20 @@ class WorkerTest(unittest.TestCase):
 
     def tearDown(self):
         self.mox.UnsetStubs()
+        
+    def testPlugin(self):
+        w = worker.Worker()
+        w.register_plugin(PluginTrafficAccountingInfoMox)
+        w.register_plugin(PluginAgentInfo)
+        assert len(w.plugins) == 2
+        w.clear_plugin()
+        assert len(w.plugins) == 0
+        print "Plugin test \t[\033[1;33mOK\033[0m]"
             
     def testIsTimeToWorkFirst(self):
         # test the first run
         w = worker.Worker()
-#        t = time.gmtime(time.mktime((2012, 10, 1, 15, 26,0,0,0,0)))
-#        self.mox.StubOutWithMock(time, 'localtime')
-#        time.localtime().AndReturn(t)
         self.mox.ReplayAll()
-#        print "mox localtime:", time.localtime()
         
         # first and not in worktime
         t = time.gmtime(time.mktime((2012, 10, 1, 15, 26,40,0,0,0)))
@@ -65,8 +81,9 @@ class WorkerTest(unittest.TestCase):
             istime = w.is_timeto_work()
             if not istime:
                 ret = w.get_leaving_time()
-                sys.stdout.write("\r%02d:%02d:%02d waitting %d seconds for work  \r" % 
+                sys.stdout.write("\r%02d:%02d:%02d waitting %d seconds for the test of IsTimeToWork  \r" % 
                                 (now.tm_hour, now.tm_min, now.tm_sec, ret))
+                assert ret == 60 - now.tm_sec
                 sys.stdout.flush()
                 time.sleep(1)
         print
@@ -76,60 +93,50 @@ class WorkerTest(unittest.TestCase):
         assert not w.last_work_min is None
         
         self.mox.VerifyAll()
+        print "update_time test \t[\033[1;33mOK\033[0m]"
+        print "is_timeto_work test \t[\033[1;33mOK\033[0m]"
+        print "get_leaving_time test \t[\033[1;33mOK\033[0m]"
 
-#    def testIsTimeToWork(self):
-#        self.mox.ReplayAll()
-#        w = worker.Worker()
-#        w.last_work_min = 5
-#        now_sec = time.localtime().tm_sec# 5
-#        ret = w.is_timeto_work()
-#        self.mox.VerifyAll()
-#        if now_sec >= 0 and now_sec <= 5 and ret:
-#            print 'IsTimeToWork OK'
-#    
-#    def testInfoPush(self):
-#        w = worker.Worker()
-#        w.register_plugin(PluginTrafficAccountingInfoMox)
-#        w.register_plugin(PluginAgentInfo)
-#    
-#        t = time.gmtime(time.mktime((2012, 10, 1, 15, 26,0,0,0,0)))
-#        self.mox.StubOutWithMock(time, 'localtime')
-#        time.localtime().AndReturn(t)
-#        #time.localtime().tm_sec.AndReturn(time.mktime())
-
-#        self.mox.ReplayAll()
-#        print "testInfoPush:"
-#        print "localtime=", time.localtime()
-#        self.assertTrue(time.localtime().tm_sec is None)
-#        print "sec=" , time.localtime().tm_sec
-#        w.info_push()
-#        self.mox.VerifyAll()
-
-#        if now_sec >= 0 and now_sec <= 5 and ret:
-#            print 'IsTimeToWork OK'
-#            
+    def testSend(self):
+        self.mox.ReplayAll()
+        w = Worker(context = ZmqContextMox())
+        msg = [1, json.dumps(["1", {86:2012}])]
+        w.send(msg)
+        assert w.feedback.count == len(msg)
+        self.mox.VerifyAll()
+        print "send test \t[\033[1;33mOK\033[0m]"
+    def testInfoPush(self):
+        self.mox.ReplayAll()
+        w = Worker(context = ZmqContextMox())
+        w.register_plugin(PluginTrafficAccountingInfoMox)
+        w.register_plugin(PluginAgentInfo)
+        w.info_push()
+        self.mox.VerifyAll()
+        print "info_push test \t[\033[1;33mOK\033[0m]"
+      
 #    def testWorkerClass(self):
 #        m = self.mox
 #        m.StubOutWithMock(zmq, 'Poller')
 #        m.StubOutWithMock(zmq, 'Context')
-#        zmq.Context().AndReturn(ZmqContextMox())
-#        zmq.Poller().AndReturn(ZmqPollerMox())
-#        self.mox.StubOutWithMock(worker, 'plugin_traffic_accounting_info')
-#        self.mox.StubOutWithMock(worker, 'plugin_agent_info')
+##        zmq.Context().AndReturn(ZmqContextMox())
+#        #zmq.Poller().AndReturn(ZmqPollerMox())
+##        self.mox.StubOutWithMock(worker, 'plugin_traffic_accounting_info')
+##        self.mox.StubOutWithMock(worker, 'plugin_agent_info')
 #        worker.plugin_traffic_accounting_info().AndReturn(PluginTrafficAccountingInfoMox())
 #        worker.plugin_agent_info().AndReturn(PluginAgentInfo())
 #        
-#        t = time.gmtime(time.mktime((2012, 10, 1, 15, 26,0,0,0,0)))
-#        m.StubOutWithMock(time, 'localtime')
+##        t = time.gmtime(time.mktime((2012, 10, 1, 15, 26,0,0,0,0)))
+##        m.StubOutWithMock(time, 'localtime')
 #        # Record a call to 'now', and have it return the value '1234'
-#        time.localtime().AndReturn(t)
+##        time.localtime().AndReturn(t)
 #        self.mox.ReplayAll()
-#        worker.main(False)
+##        worker.main(False)
+#        w = Worker(context = ZmqContextMox())
+#        msg = [1, json.dumps(["1", {86:2012}])]
+#        w.send(msg)
+#        assert w.feedback.count == len(msg)
 #        self.mox.VerifyAll()
 #        
-#    def test2(self):
-#        
-#        pass
     
 class WorkerIntegrationTest():
 #class WorkerIntegrationTest(unittest.TestCase):
@@ -170,4 +177,13 @@ class WorkerIntegrationTest():
 
 if __name__ == '__main__':
     print 'Unit test of worker.'
-    unittest.main()
+    WorkerTestSuite = unittest.TestSuite()
+    WorkerTestSuite.addTest(WorkerTest("testPlugin"))
+    WorkerTestSuite.addTest(WorkerTest("testSend"))
+    WorkerTestSuite.addTest(WorkerTest("testIsTimeToWorkFirst"))
+    WorkerTestSuite.addTest(WorkerTest("testInfoPush"))
+        
+    runner = unittest.TextTestRunner()
+    runner.run(WorkerTestSuite)
+
+
