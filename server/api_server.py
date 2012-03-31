@@ -10,7 +10,6 @@
 import sys
 import time
 import json
-import db
 import traceback
 import ConfigParser
 import zmq
@@ -126,6 +125,7 @@ def api_getdata(row_id, cf_str, scf_str, statistic, period=5, time_from=0, time_
     statistic is STATISTIC enum
     period default=5 minutes
     time_to default=0(now)
+    return: recordset, count, bool(count > limit?)
     """
     global data_db
     global cfs
@@ -142,14 +142,20 @@ def api_getdata(row_id, cf_str, scf_str, statistic, period=5, time_from=0, time_
     
 #    print "cf.get(%s, super_column=%s, column_start=%d, column_finish=%d)" % \
 #        (row_id, scf_str, time_from, float(time_to))
-    rs = cf.get(row_id, super_column=scf_str, column_start=time_from, column_finish=int(float(time_to)), column_count=20000)
+    try:
+        rs = cf.get(row_id, super_column=scf_str, column_start=time_from, column_finish=int(float(time_to)), column_count=20000)
+        count = len(rs)
+    except pycassa.cassandra.c10.ttypes.NotFoundException:
+        rs = None
+        count = 0
     #print rs
-    count = len(rs)
     
     return rs, count, False if (count == 20000) else True
     
 def analyize_data(rs, period, statistic):
     """[private func]analyize the data"""
+    if rs is None:
+        return
     t = 0
     key_time = 0
     st = Statistics()
@@ -180,11 +186,18 @@ def analyize_data(rs, period, statistic):
 
         
 def api_statistic(row_id, cf_str, scf_str, statistic, period=5, time_from=0, time_to=0):
+    ret_len = 0
     rs, count, all_data = api_getdata(row_id, cf_str, scf_str, statistic, period, time_from, time_to)
-    buf = analyize_data(rs, 1, statistic)
-    ret = analyize_data(buf, period, statistic)
-    
-    return ret, len(ret), all_data
+    if not rs is None and count > 0:
+        buf = analyize_data(rs, 1, statistic)
+        ret = analyize_data(buf, period, statistic)
+        ret_len = len(ret)
+        print ret_len, "result."
+    else:
+        print "no result."
+        ret = None
+        ret_len = 0
+    return ret, ret_len, all_data
     
 if __name__ == '__main__':
     config = ConfigParser.ConfigParser()
@@ -213,8 +226,7 @@ if __name__ == '__main__':
         
         #[u'S', u'instance-00000001@pyw.novalocal', u'cpu', u'total', 0, 5, 1332897600, 0]
         print '*' * 60
-        print msg
-        print '*' * 60
+        print "recv:", msg
         row_id = msg[1]
         cf_str = msg[2]
         scf_str = msg[3]

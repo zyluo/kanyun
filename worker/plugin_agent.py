@@ -130,6 +130,7 @@ class LibvirtMonitor(object):
             if devdst is None:
                 continue
             disks.append(devdst)
+        print 'xm;_nodes', disks
         return disks
 
     def _collect_cpu_mem_info(self, dom_conn):

@@ -39,19 +39,19 @@ def main():
         param[4] = 0
         param[5] = 2
         r = call(api_client, param)
-        print 'SUM=', r.values()[0]
+        print 'SUM=', '(no result)' if r is None else r.values()[0]
         
         param[4] = 1
         r = call(api_client, param)
-        print 'MAX=', r.values()[0]
+        print 'MAX=', '(no result)' if r is None else r.values()[0]
         
         param[4] = 2
         r = call(api_client, param)
-        print 'MIX=', r.values()[0]
+        print 'MIX=', '(no result)' if r is None else r.values()[0]
         
         param[4] = 3
         r = call(api_client, param)
-        print 'AVERAGE=', r.values()[0]
+        print 'AVERAGE=', '(no result)' if r is None else r.values()[0]
     
     
 if __name__ == '__main__':

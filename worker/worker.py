@@ -12,6 +12,7 @@ import json
 import sys
 import time
 import zmq
+import logging
 
 """
 protocol:
@@ -63,11 +64,17 @@ class Worker:
     # before the first run ,the rate is 1000(milliseconds). after the first run, rate is 5000(milliseconds)
     working_rate = 1000
     
-    def __init__(self, context):
+    def __init__(self, context = None, logger = None):
         """ context is zeroMQ socket context"""
         self.plugins = []
-        self.last_work_min = -1 # this value is -1 until first update
+        self.last_work_min = None # this value is None until first update
         self.update_time()
+        self.logger = logger
+        if self.logger is None:
+            self.logger=logging.getLogger()
+            handler=logging.FileHandler("/tmp/worker.log")
+            self.logger.addHandler(handler)
+            self.logger.setLevel(logging.NOTSET)
         if not (context is None):
             self.feedback = context.socket(zmq.PUSH)
             self.feedback.connect("tcp://127.0.0.1:5559")
@@ -79,18 +86,19 @@ class Worker:
     
     def update_time(self):
         """[private]save the current time.First update will between 0-5(sec) in current minutes"""
-        if -1 == self.last_work_min:
-            if time.localtime().tm_sec >= 0 and time.localtime().tm_sec <= 5:
-                self.last_work_min = time.localtime().tm_min - 1
+        localtime = time.localtime()
+        if self.last_work_min is None:
+            if localtime.tm_sec >= 0 and localtime.tm_sec <= 5:
+                self.last_work_min = localtime.tm_min - 1
                 if self.last_work_min < 0:
                     self.last_work_min = 59
                 self.working_rate = 5000
         else:
-            self.last_work_min = time.localtime().tm_min
+            self.last_work_min = localtime.tm_min
             
     def send(self, msg):
         """PUSH the msg(msg is a list)"""
-        print 'send:', msg
+        self.logger.debug( 'send:%s' % msg )
         self.feedback.send_multipart(msg)
     
     def get_leaving_time(self):
@@ -104,10 +112,10 @@ class Worker:
         note: 
         First run will between xx:xx:00-xx:xx:05, 
         if time is not in this range, will return false"""
-        if -1 == self.last_work_min:
+        if self.last_work_min is None:
             self.update_time()
 
-        if -1 == self.last_work_min:
+        if self.last_work_min is None:
             return False
         return self.last_work_min <> time.localtime().tm_min
         
@@ -116,38 +124,43 @@ class Worker:
         if not self.is_timeto_work():
             return
         now = time.localtime()
-        print '%02d:%02d:%02d working...' % (now[3], now[4], now[5])
+        self.logger.debug( '%02d:%02d:%02d working...' % (now[3], now[4], now[5]) )
 
         for plugin in self.plugins:
             msg_type, info = plugin()
-            assert(not info is None)
-            if len(info) > 0:
+            if (not info is None) and len(info) > 0:
                 self.send([msg_type, json.dumps(info)])
             #self.send(info)
         
         self.update_time()
     
-def main():
+running = True
+
+def main(param):
 #    if len(sys.argv) <> 2:
-#        print "usage: python %s [1-3]" % sys.argv[0]
+#        logging.debug( "usage: python %s [1-3]" % sys.argv[0]
 #        sys.exit(0)
 
 #    worker_id = sys.argv[1]
 #    if worker_id not in ['1', '2', '3']:
-#        print "usage: python %s [1-3]" % sys.argv[0]
+#        logging.debug( "usage: python %s [1-3]" % sys.argv[0]
 #        sys.exit(0)
+    logger=logging.getLogger()
+    handler=logging.FileHandler("/tmp/worker.log")
+    logger.addHandler(handler)
+    logger.setLevel(logging.NOTSET)
+
     worker_id = '1'
 
+    running = param
     context = zmq.Context()
-    print context
 
     # Socket for control input
     broadcast = context.socket(zmq.SUB)
-    print broadcast
     broadcast.connect("tcp://localhost:5558")
     broadcast.setsockopt(zmq.SUBSCRIBE, "lb")
 
-    worker = Worker(context)
+    worker = Worker(context, logger)
     # TODO: the plugin come form configure file maybe better
     #worker.register_plugin(plugin_local_cpu)
     worker.register_plugin(plugin_heartbeat)
@@ -162,7 +175,7 @@ def main():
     poller.register(broadcast, zmq.POLLIN)
 
     # Process messages from both sockets
-    while True:
+    while running:
         socks = dict(poller.poll(worker.working_rate))
         
         # parse the command from server
@@ -171,7 +184,7 @@ def main():
             # Process task
             message = json.loads(msg_body)
             if message['dest'] in ['ALL', worker_id]:
-                print message['cmd'], message['opt']
+                logger.debug( message['cmd'], message['opt'] )
             # Send results to feedback
             worker.send([msg_type, msg_id,
                                      json.dumps({'worker_id': worker_id,
@@ -183,6 +196,9 @@ def main():
         # push the info data to server
         worker.info_push()
         
+        if not running:
+            break
+        
         
 if __name__ == '__main__':
-    main()
+    main(True)

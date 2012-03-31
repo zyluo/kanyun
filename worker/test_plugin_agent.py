@@ -5,7 +5,7 @@ import unittest
 
 import mox
 
-import agent as worker
+import plugin_agent as worker
 
 """A worker plugin run in nova-compute node
 """
@@ -99,19 +99,21 @@ class TestLibvirtMonitor(unittest.TestCase):
 
     def setUp(self):
         self.mocker = mox.Mox()
-        self.a = self.mocker.CreateMock(worker.LibvirtMonitor)
+        #self.a = self.mocker.CreateMock(worker.LibvirtMonitor)
+        self.a = worker.LibvirtMonitor()
 
     def test_collect_info(self):
         pass
 
     def test_get_utc_sec(self):
-        self.a.get_utc_sec(test_a)
+#        self.a.get_utc_sec(test_a)
         utc_sec = self.a.get_utc_sec()
         self.assertTrue(time.time() - 1 < utc_sec < time.time())
 
     def test_get_devs(self):
         # make sure the shuffled sequence does not lose any elements
         devs = self.a.get_xml_nodes(SAMPLE_XML, './devices/interface')
+        print "devs:", devs
         self.assertEqual(devs, ['vnet0'])
         devs = self.a.get_xml_nodes(SAMPLE_XML, './devices/disk')
         self.assertEqual(devs, ['vda', 'vdb'])

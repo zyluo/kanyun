@@ -39,6 +39,7 @@ def get_traffic_accounting_info():
    
     for line in lines:
         counter_info = line.split()
+#        print "line:", line, "counter_info:", counter_info
         out_bytes = counter_info[1]
         instance_ip = counter_info[6]
         instance_id = counter_info[9]

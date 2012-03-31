@@ -13,7 +13,7 @@ import json
 import sys
 import traceback
 import zmq
-import db
+#import db
 import pycassa
 
 import plugin_agent_srv
@@ -93,16 +93,15 @@ def plugin_decoder_traffic_accounting(db, data):
             cf.insert(i, {data[i][0]: {data[i][1]: data[i][2]}})
 
 
-def get_work_msg(cmd, **msg):
-    res = db.read_whole_lb(**msg)
-    if cmd == "delete_lb":
-        res = dict(filter(lambda (x, y): x in ['user_name', 'tenant',
-                                               'load_balancer_id',
-                                               'protocol'], res.items()))
-    return res
+#def get_work_msg(cmd, **msg):
+#    res = db.read_whole_lb(**msg)
+#    if cmd == "delete_lb":
+#        res = dict(filter(lambda (x, y): x in ['user_name', 'tenant',
+#                                               'load_balancer_id',
+#                                               'protocol'], res.items()))
+#    return res
 
 if __name__ == '__main__':
-    global config
     # register_plugin
     plugins = dict()
     plugins[MSG_TYPE.HEART_BEAT] = plugin_heartbeat
@@ -145,42 +144,42 @@ if __name__ == '__main__':
         socks = dict(poller.poll(20000))
         
         # parse the command form client
-        if socks.get(handler) == zmq.POLLIN:
-            print 'REQ poolin'
-            msg_type, msg_id, msg_json = handler.recv_multipart()
-            msg_body = json.loads(msg_json)
-            cli_msg = {'code': 200, 'desc': 'OK'}
-            try:
-                cmd = msg_body['cmd']
-                msg = msg_body['msg']
-                print cmd, msg
-                print
-                # access db and get return msg
-                if cmd in ['read_lb', 'read_lb_list', 'read_load_balancer_id_all',
-                           'read_http_server_name_all']:
-                    db_res = getattr(db, cmd)(**msg)
-                    cli_msg.update(db_res)
-                elif cmd in ['create_lb', 'delete_lb', 'update_lb_config',
-                             'update_lb_instances', 'update_lb_http_server_names']:
-                    getattr(db, cmd)(**msg)
-                    work_cmd = "update_lb" if cmd.startswith("update_lb") else cmd
-                    work_msg = get_work_msg(cmd, **msg)
-                    print ">>>>>>>>>", work_msg
-                    print
-                    broadcast.send_multipart([msg_type, msg_id,
-                                              json.dumps({'cmd': work_cmd,
-                                                          'msg': work_msg})])
-                else:
-                    raise Exception("Invalid command")
-            except Exception, e:
-                print traceback.format_exc()
-                cli_msg['code'] = 500
-                cli_msg['desc'] = str(e)
-            print cmd, cli_msg
-            print
-            handler.send_multipart([msg_type, msg_id,
-                                    json.dumps({'cmd': cmd,
-                                                'msg': cli_msg})])
+#        if socks.get(handler) == zmq.POLLIN:
+#            print 'REQ poolin'
+#            msg_type, msg_id, msg_json = handler.recv_multipart()
+#            msg_body = json.loads(msg_json)
+#            cli_msg = {'code': 200, 'desc': 'OK'}
+#            try:
+#                cmd = msg_body['cmd']
+#                msg = msg_body['msg']
+#                print cmd, msg
+#                print
+#                # access db and get return msg
+#                if cmd in ['read_lb', 'read_lb_list', 'read_load_balancer_id_all',
+#                           'read_http_server_name_all']:
+#                    db_res = getattr(db, cmd)(**msg)
+#                    cli_msg.update(db_res)
+#                elif cmd in ['create_lb', 'delete_lb', 'update_lb_config',
+#                             'update_lb_instances', 'update_lb_http_server_names']:
+#                    getattr(db, cmd)(**msg)
+#                    work_cmd = "update_lb" if cmd.startswith("update_lb") else cmd
+#                    work_msg = get_work_msg(cmd, **msg)
+#                    print ">>>>>>>>>", work_msg
+#                    print
+#                    broadcast.send_multipart([msg_type, msg_id,
+#                                              json.dumps({'cmd': work_cmd,
+#                                                          'msg': work_msg})])
+#                else:
+#                    raise Exception("Invalid command")
+#            except Exception, e:
+#                print traceback.format_exc()
+#                cli_msg['code'] = 500
+#                cli_msg['desc'] = str(e)
+#            print cmd, cli_msg
+#            print
+#            handler.send_multipart([msg_type, msg_id,
+#                                    json.dumps({'cmd': cmd,
+#                                                'msg': cli_msg})])
 
         # parse the data from worker and save to database
         if socks.get(feedback) == zmq.POLLIN:
