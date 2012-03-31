@@ -120,13 +120,8 @@ def api_init():
     server_cfg = dict(config.items('Demux'))
     data_db = pycassa.ConnectionPool('data', server_list=[server_cfg['db_host']])
 
-def api_getdata(row_id, cf_str, scf_str, statistic, period=5, time_from=0, time_to=0):
-    """
-    statistic is STATISTIC enum
-    period default=5 minutes
-    time_to default=0(now)
-    return: recordset, count, bool(count > limit?)
-    """
+def get_cf(cf_str):
+    """[private]"""
     global data_db
     global cfs
     
@@ -136,6 +131,14 @@ def api_getdata(row_id, cf_str, scf_str, statistic, period=5, time_from=0, time_
         print 'new connection:', cf_str
         cfs[cf_str] = pycassa.ColumnFamily(data_db, cf_str)
     cf = cfs[cf_str]
+    return cf
+     
+    
+def api_getdata(row_id, cf_str, scf_str, time_from=0, time_to=0):
+    """
+    return: recordset, count, bool(count > limit?)
+    """
+    cf = get_cf(cf_str)
         
     if time_to == 0:
         time_to = time.time()
@@ -184,10 +187,36 @@ def analyize_data(rs, period, statistic):
         
     return this_period
 
+############################# public API interface #############################
+
+def api_getbykey(row_id, cf_str, scf_str):
+    """
+    return: recordset, count, bool(count > limit?)
+    """
+    cf = get_cf(cf_str)
         
+    if time_to == 0:
+        time_to = time.time()
+    
+#    print "cf.get(%s, super_column=%s, column_start=%d, column_finish=%d)" % \
+#        (row_id, scf_str, time_from, float(time_to))
+    try:
+        rs = cf.get(row_id, super_column=scf_str, column_start=time_from, column_finish=int(float(time_to)), column_count=20000)
+        count = len(rs)
+    except pycassa.cassandra.c10.ttypes.NotFoundException:
+        rs = None
+        count = 0
+    #print rs
+    
+    return rs, count, False if (count == 20000) else True
+    
+    
 def api_statistic(row_id, cf_str, scf_str, statistic, period=5, time_from=0, time_to=0):
+    """statistic is STATISTIC enum
+    period default=5 minutes
+    time_to default=0(now)"""
     ret_len = 0
-    rs, count, all_data = api_getdata(row_id, cf_str, scf_str, statistic, period, time_from, time_to)
+    rs, count, all_data = api_getdata(row_id, cf_str, scf_str, time_from, time_to)
     if not rs is None and count > 0:
         buf = analyize_data(rs, 1, statistic)
         ret = analyize_data(buf, period, statistic)
@@ -198,7 +227,9 @@ def api_statistic(row_id, cf_str, scf_str, statistic, period=5, time_from=0, tim
         ret = None
         ret_len = 0
     return ret, ret_len, all_data
-    
+
+########################## end public API interface #############################
+
 if __name__ == '__main__':
     config = ConfigParser.ConfigParser()
     config.read("demux.conf")
@@ -220,20 +251,28 @@ if __name__ == '__main__':
         message = api_server.recv()
         msg = json.loads(message)
         
-        if (msg[0] != 'S'):
+        if msg[0] == 'S':
+            #[u'S', u'instance-00000001@pyw.novalocal', u'cpu', u'total', 0, 5, 1332897600, 0]
+            print '*' * 60
+            print "recv:", msg
+            row_id = msg[1]
+            cf_str = msg[2]
+            scf_str = msg[3]
+            statistic = msg[4]
+            period = msg[5]
+            time_from = msg[6]
+            time_to = msg[7]
+            rs, count, _ = api_statistic(row_id, cf_str, scf_str, statistic, period=period, time_from=time_from, time_to=time_to)
+            api_server.send (json.dumps(rs))
+        elif msg[0] == 'G':
+            print '*' * 60
+            print "recv:", msg
+            row_id = msg[1]
+            cf_str = msg[2]
+            scf_str = msg[3]
+            rs, count, _ = api_getbykey(row_id, cf_str, scf_str)
+            api_server.send (json.dumps(rs))
+        else:
             api_server.send (json.dumps([]))
             continue
-        
-        #[u'S', u'instance-00000001@pyw.novalocal', u'cpu', u'total', 0, 5, 1332897600, 0]
-        print '*' * 60
-        print "recv:", msg
-        row_id = msg[1]
-        cf_str = msg[2]
-        scf_str = msg[3]
-        statistic = msg[4]
-        period = msg[5]
-        time_from = msg[6]
-        time_to = msg[7]
-        rs, count, _ = api_statistic(row_id, cf_str, scf_str, statistic, period=period, time_from=time_from, time_to=time_to)
-        api_server.send (json.dumps(rs))
 

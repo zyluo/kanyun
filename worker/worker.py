@@ -13,11 +13,14 @@ import sys
 import time
 import zmq
 import logging
+import ConfigParser
 
 """
 protocol:
     http://wiki.sinaapp.com/doku.php?id=monitoring
 """
+
+WORKER_ID = "black"
 
 class MSG_TYPE:
     """same as server.py"""
@@ -29,7 +32,7 @@ class MSG_TYPE:
 # plugin
 def plugin_heartbeat(status = 1):
     """status: 0:I will exit; 1:working"""
-    info = ['WORKER1', time.time(), status]
+    info = [WORKER_ID, time.time(), status]
     return MSG_TYPE.HEART_BEAT, info
     
 def plugin_local_cpu():
@@ -64,7 +67,7 @@ class Worker:
     # before the first run ,the rate is 1000(milliseconds). after the first run, rate is 5000(milliseconds)
     working_rate = 1000
     
-    def __init__(self, context = None, logger = None):
+    def __init__(self, context = None, feedback_host='127.0.0.1', feedback_port=5559, logger = None):
         """ context is zeroMQ socket context"""
         self.plugins = []
         self.last_work_min = None # this value is None until first update
@@ -77,7 +80,7 @@ class Worker:
             self.logger.setLevel(logging.NOTSET)
         if not (context is None):
             self.feedback = context.socket(zmq.PUSH)
-            self.feedback.connect("tcp://127.0.0.1:5559")
+            self.feedback.connect("tcp://%s:%s" % (feedback_host, feedback_port))
     
     def clear_plugin(self):
         self.plugins.clear()
@@ -145,22 +148,39 @@ def main(param):
 #    if worker_id not in ['1', '2', '3']:
 #        logging.debug( "usage: python %s [1-3]" % sys.argv[0]
 #        sys.exit(0)
+    global WORKER_ID
+    
+    if len(sys.argv) == 2 and sys.argv[1] == '--help':
+        print 'usage:\nuse speical id: worker <id>\nuse id in config file: worker'
+        return
+
+    config = ConfigParser.ConfigParser()
+    config.read("monitor_worker.conf")
+    cfg = dict(config.items('Worker'))
+    
+    WORKER_ID = cfg['id']
+    if len(sys.argv) == 2:
+        if len(sys.argv[1]) > 16:
+            print 'Invalid worker id.'
+            return
+        WORKER_ID = sys.argv[1]
+    
     logger=logging.getLogger()
     handler=logging.FileHandler("/tmp/worker.log")
     logger.addHandler(handler)
     logger.setLevel(logging.NOTSET)
 
-    worker_id = '1'
 
     running = param
     context = zmq.Context()
 
     # Socket for control input
     broadcast = context.socket(zmq.SUB)
-    broadcast.connect("tcp://localhost:5558")
+    broadcast.connect("tcp://%(broadcast_host)s:%(broadcast_port)s" % cfg)
+#    broadcast.connect("tcp://localhost:5558")
     broadcast.setsockopt(zmq.SUBSCRIBE, "lb")
 
-    worker = Worker(context, logger)
+    worker = Worker(context=context, feedback_host=cfg['feedback_host'], feedback_port=cfg['feedback_port'], logger=logger)
     # TODO: the plugin come form configure file maybe better
     #worker.register_plugin(plugin_local_cpu)
     worker.register_plugin(plugin_heartbeat)

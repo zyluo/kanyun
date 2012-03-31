@@ -50,27 +50,30 @@ class WorkerTest(unittest.TestCase):
     def testIsTimeToWorkFirst(self):
         # test the first run
         w = worker.Worker()
-        t = time.gmtime(time.mktime((2012, 10, 1, 15, 26,0,0,0,0)))
-        self.mox.StubOutWithMock(time, 'localtime')
-        time.localtime().AndReturn(t)
+#        t = time.gmtime(time.mktime((2012, 10, 1, 15, 26,0,0,0,0)))
+#        self.mox.StubOutWithMock(time, 'localtime')
+#        time.localtime().AndReturn(t)
         self.mox.ReplayAll()
-        print 
-        print "mox localtime:", time.localtime()
-        print
+#        print "mox localtime:", time.localtime()
         
         # first and not in worktime
         t = time.gmtime(time.mktime((2012, 10, 1, 15, 26,40,0,0,0)))
         w.last_work_min = None
-        ret = w.is_timeto_work()
-        assertEqual(ret, False)
-        assertFalse(self.last_work_min, None)
-                
-        # first and in worktime
-        t = time.gmtime(time.mktime((2012, 10, 1, 15, 26,0,0,0,0)))
-        w.last_work_min = None
-        ret = w.is_timeto_work()
-        assertEqual(ret, True)
-        assertFalse(self.last_work_min, None)
+        istime = False
+        while istime == False:
+            now = time.localtime()
+            istime = w.is_timeto_work()
+            if not istime:
+                ret = w.get_leaving_time()
+                sys.stdout.write("\r%02d:%02d:%02d waitting %d seconds for work  \r" % 
+                                (now.tm_hour, now.tm_min, now.tm_sec, ret))
+                sys.stdout.flush()
+                time.sleep(1)
+        print
+        
+        assert now.tm_sec >=0 and now.tm_sec <= 5
+        assert istime == True
+        assert not w.last_work_min is None
         
         self.mox.VerifyAll()
 
