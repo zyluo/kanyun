@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 # encoding: utf-8
 # TAB char: space
 # Task ventilator
@@ -206,11 +207,26 @@ def analyize_data(rs, period, statistic):
     return this_period
 
 ############################# public API interface #############################
-def api_getbyInstanceID(row_id):
-    ""
-    cf_str = 'cpu'
-    scf_str = 'total'
-    return api_getbykey(row_id, cf_str, scf_str)
+def api_getbyInstanceID(row_id, cf_str):
+    cf = get_cf(cf_str)
+    if cf is None:
+        return None, 0, True
+        
+    limit = 20000
+    time_to = time.time()
+    time_from = time_to - 24 * 60 * 60
+    
+#    print "cf.get(%s, super_column=%s, column_start=%d, column_finish=%d)" % \
+#        (row_id, scf_str, time_from, float(time_to))
+    try:
+        rs = cf.get(row_id)
+        count = len(rs)
+    except pycassa.cassandra.c10.ttypes.NotFoundException:
+        rs = None
+        count = 0
+    print rs
+    
+    return rs, count, False if (count == 20000) else True
     
     
 def api_getbykey(row_id, cf_str, scf_str, limit=20000):
@@ -228,7 +244,7 @@ def api_getbykey(row_id, cf_str, scf_str, limit=20000):
 #    print "cf.get(%s, super_column=%s, column_start=%d, column_finish=%d)" % \
 #        (row_id, scf_str, time_from, float(time_to))
     try:
-        rs = cf.get(row_id, super_column=scf_str, column_start=int(time_from), column_finish=int(float(time_to)), column_count=, limit)
+        rs = cf.get(row_id, super_column=scf_str, column_start=int(time_from), column_finish=int(float(time_to)), column_count=limit)
         count = len(rs)
     except pycassa.cassandra.c10.ttypes.NotFoundException:
         rs = None
@@ -298,6 +314,13 @@ if __name__ == '__main__':
             cf_str = msg[2]
             scf_str = msg[3]
             rs, count, _ = api_getbykey(row_id, cf_str, scf_str)
+            api_server.send (json.dumps(rs))
+        elif msg[0] == 'K':
+            print '*' * 60
+            print "recv:", msg
+            row_id = msg[1]
+            cf_str = msg[2]
+            rs, count, _ = api_getbyInstanceID(row_id, cf_str)
             api_server.send (json.dumps(rs))
         else:
             api_server.send (json.dumps([]))

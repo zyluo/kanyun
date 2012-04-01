@@ -62,7 +62,7 @@ cfs = dict()
 """
 previous_data = dict()
 
-def get_change(prekey, data):
+def get_change(prekey, new_value):
     """
     # prekey: /instance_0001#host/cpu/total/
     # data: ["cpu", "total", [1332465360.033008, 9043400000000]]
@@ -72,30 +72,94 @@ def get_change(prekey, data):
     global previous_data
     val1 = 0
     val2 = None
-    new_value = data[2]
-    if previous_data.has_key(prekey + "/1"):
-        o = previous_data[prekey + "/1"]
+    if previous_data.has_key(prekey):
+        o = previous_data[prekey]
         val1 = new_value[1] - o[0]
         print '\t1:%s --> %s (%d)' % (o[0], new_value[1], val1)
     else:
         val1 = new_value[1]
         print '\t1:%s' % (val1)
                 
-    if data[0] != 'cpu': 
-        if previous_data.has_key(prekey + "/2"):
-            o = previous_data[prekey + "/2"]
-            val2 = new_value[2] - o[0]
-            print '\t2:%s --> %s (%d)' % (o[0], new_value[2], val2)
-        else:
-            val2 = new_value[2]
-            print '\t2:%s' % (val2)
+    return val1
     
-    # TODO: temp code
-    import random
-    val1 += random.randint(0,30)
-    print '\t\033[1;33mR:  --> %d\033[0m' % (val1)
-    #
-    return val1, val2
+cf_dict = {"nic": ('nic_incoming', 'nic_outgoing'), \
+            "mem": ("mem_max","mem_free"), \
+            "blk": ("blk_read","blk_write")
+            }
+def get_cf_str(cf_str):
+    """
+    [('cpu', 'total', (utc_time, cpu_usage)), 
+    ('mem', 'total', (utc_time, max, free)), 
+    ('nic', 'vnet8', (utc_time, incoming, outgoing(内网))), 
+    ('blk', 'vda', (utc_time, read, write)), 
+    ('blk', 'vdb', (utc_time, read, write))],
+    """
+    if cf_dict.has_key(cf_str):
+        return cf_dict[cf_str]
+    else:
+        return (cf_str, None)
+
+def get_cf(db, cf_str):
+    """cf_str is get_cf_str(str)
+    return cf/None"""
+    cf = None
+    if cfs.has_key(cf_str):
+        cf = cfs[cf_str]
+    else:
+        print 'create cf connection:', cf_str
+        try:
+            cfs[cf_str] = pycassa.ColumnFamily(db, cf_str)
+            cf = cfs[cf_str]
+        except pycassa.cassandra.c10.ttypes.NotFoundException:
+            print cf_str, "NotFound"
+        
+    return cf
+
+def parse_single(db, raw_cf_str, instance_id, value, keypath, scf_str):
+    """value=[1332465360.033008, 9043400000000]"""
+    cf_str, _ = get_cf_str(raw_cf_str)
+    cf = get_cf(db, cf_str)
+    if cf is None:
+        print "Unsupport cf type:", cf_str
+        return
+    # get change
+    prekey = keypath + '/' + cf_str + '/' + scf_str
+    if cf_str in ['cpu']:
+        val1 = value[1]
+    else:
+        val1 = get_change(prekey, value)
+    
+    previous_data[prekey + '/1'] = (value[1], val1, instance_id, cf_str, scf_str)
+    cf.insert(instance_id, {scf_str: {int(value[0]): str(val1)}})
+    print '\tbuf %s saved:key=%s, cf=%s' % (prekey + '/1', instance_id, cf_str)
+
+def parse_multi(db, raw_cf_str, instance_id, value, keypath, scf_str):
+    """value=[1332465360.033008, 9043400000000]"""
+    cf2 = None
+    cf_str1, cf_str2 = get_cf_str(raw_cf_str)
+    cf1 = get_cf(db, cf_str1)
+    if cf1 is None:
+        print "unsupport cf type:", cf_str1
+        return
+    cf2 = get_cf(db, cf_str2)
+    if cf2 is None:
+        print "unsupport cf type :", cf_str2
+        return
+    # get change
+    prekey1 = keypath + '/' + cf_str1 + '/' + scf_str
+    prekey2 = keypath + '/' + cf_str2 + '/' + scf_str
+    if raw_cf_str in ['mem']:
+        val1 = value[1]
+        val2 = value[2]
+    else:
+        val1 = get_change(prekey1, value)
+        val2 = get_change(prekey2, value)
+        previous_data[prekey1] = (value[1], val1, instance_id, cf_str1, scf_str)
+        previous_data[prekey2] = (value[2], val2, instance_id, cf_str2, scf_str)
+        cf1.insert(instance_id, {scf_str: {int(value[0]): str(val1)}})
+        cf2.insert(instance_id, {scf_str: {int(value[0]): str(val2)}})
+        print '\t%s saved\n\t%s saved' % (prekey1, prekey2)
+        print '\tkey=%s, cf=%s/%s 2 records saved' % (instance_id, cf_str1, cf_str2)
 
 def plugin_decoder_agent(db, data):
     """decoder the agent data, and save into cassandra database.
@@ -132,35 +196,45 @@ def plugin_decoder_agent(db, data):
 
         for i in data:
             # i is ["cpu", "total", [1332465360.033008, 9043400000000]], 
-            cf_str = i[0]
             scf_str = i[1]
-            if not cfs.has_key(cf_str):
-                cfs[cf_str] = pycassa.ColumnFamily(db, cf_str)
-                print 'create cf connection:', cf_str
-            
-            cf = cfs[cf_str]
-            
-            # get change
-            prekey = keypath + '/' + cf_str + '/' + scf_str
-            if cf_str in ['cpu', 'mem', 'blk']:
-                val1 = i[2][1]
-                val2 = i[2][1] if len(i[2]) > 2 else None
-            else:
-                val1, val2 = get_change(prekey, i)
-            
+#            cf2 = None
+#            cf_str1, cf_str2 = get_cf_str(i[0])
+#            cf1 = get_cf(db, cf_str1)
+#            if cf1 is None:
+#                return
+
             value = i[2]
-            if val2 is None:
-                previous_data[prekey + '/1'] = (value[1], val1, instance_id, cf_str, scf_str)
-                cf.insert(instance_id, {scf_str: {int(value[0]): str(val1)}})
-                print '\t%s=%d(%s) saved' % (prekey, val1, str(val1))
-                print '\tkey=%s, cf=%s saved' % (instance_id, cf_str)
+            if i[0] in ['cpu']:
+                parse_single(db, i[0], instance_id, value, keypath, scf_str)
+            elif i[0] in ['mem', 'nic', 'blk']:
+#                cf2 = get_cf(cf_str2)
+#                if cf2 is None or len(i[2]) < 2:
+#                    return
+                parse_multi(db, i[0], instance_id, value, keypath, scf_str)
             else:
-                previous_data[prekey + '/1'] = (value[1], val1, instance_id, cf_str, scf_str)
-                previous_data[prekey + '/2'] = (value[2], val2, instance_id, cf_str, scf_str)
-                cf.insert(instance_id, {scf_str + '1': {int(value[0]): str(val1)}})
-                cf.insert(instance_id, {scf_str + '2': {int(value[0]): str(val2)}})
-                print '\t%s saved\n\t%s saved' % (prekey + '/1', prekey + '/2')
-                print '\tkey=%s, cf=%s 2 records saved' % (instance_id, cf_str)
+                print 'Not support type:', i[0]
+                return
+#            # get change
+#            prekey = keypath + '/' + cf_str1 + '/' + scf_str
+#            if i[1] in ['cpu', 'mem', 'blk']:
+#                val1 = value[1]
+#                val2 = value[2]
+#            else:
+#                val1, val2 = get_change(prekey, i)
+#            
+#            if val2 is None:
+#                previous_data[prekey + '/1'] = (value[1], val1, instance_id, cf_str1, scf_str)
+#                cf1.insert(instance_id, {scf_str: {int(value[0]): str(val1)}})
+#                print '\t%s=%d(%s) saved' % (prekey, val1, str(val1))
+#                print '\tkey=%s, cf=%s saved' % (instance_id, cf_str1)
+#            else:
+#                previous_data[prekey + '/1'] = (value[1], val1, instance_id, cf_str1, scf_str)
+#                previous_data[prekey + '/2'] = (value[2], val2, instance_id, cf_str2, scf_str)
+#                cf1.insert(instance_id, {scf_str: {int(value[0]): str(val1)}})
+#                if not cf2 is None:
+#                    cf2.insert(instance_id, {scf_str: {int(value[0]): str(val2)}})
+#                print '\t%s saved\n\t%s saved' % (prekey + '/1', prekey + '/2')
+#                print '\tkey=%s, cf=%s 2 records saved' % (instance_id, cf_str1)
 
     print '\t%d buffer, spend \033[1;33m%f\033[0m seconds' % (len(previous_data), time.time() - pass_time)
     print '-' * 60

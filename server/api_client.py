@@ -40,18 +40,24 @@ def invoke_getbyInstanceID(socket, row_id):
     cmd.append([u'G', row_id, "nic", "vnet01"])
     cmd.append([u'G', row_id, "blk", "blk1"])
     cmd.append([u'G', row_id, "cpu", "total"])
-    cmd.append([u'G', row_id, "mem", "total"])
+    cmd.append([u'G', row_id, "mem", "total1"])
+    cmd.append([u'G', row_id, "mem", "total2"])
+    
+    cmd = list()
+    cmd.append([u'K', row_id, "mem"])
     
     for i in cmd:
         cf_str = i[2]
-        scf_str = i[3]
+#        scf_str = i[3]
         r = invoke(socket, i)
         if r is None:
             r = dict()
+#        print r
         for k, i in r.iteritems():
-            timestr = time.strftime("%m-%d %H:%M:%S", time.localtime(float(k)))
-            print "%s %s=%s" % (timestr, cf_str, i)
-        print "%d results of cf=%s,scf=%s,key=%s" % (len(r), cf_str, scf_str, row_id)
+            print "%s.%s %d results" % (cf_str, k, len(i))
+#            timestr = time.strftime("%m-%d %H:%M:%S", time.localtime(float(k)))
+#            print "%s %s=%s" % (timestr, cf_str, i)
+#        print "%d results of cf=%s,scf=%s,key=%s" % (len(r), cf_str, scf_str, row_id)
 
     
 def invoke_statistics(api_client, row_id, cf_str, scf_str, statistic, period=5, time_from=0, time_to=0):
@@ -79,7 +85,7 @@ def invoke_statistics(api_client, row_id, cf_str, scf_str, statistic, period=5, 
         
         param[4] = 2
         r = invoke(api_client, param)
-        print 'MIX=', '(no result)' if r is None else r.values()[0]
+        print 'MIN=', '(no result)' if r is None else r.values()[0]
         
         param[4] = 3
         r = invoke(api_client, param)
