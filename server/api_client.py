@@ -109,7 +109,7 @@ def main():
             print "example:"
             print "\tapi_client instance-0000002 vmnetwork 10.0.0.2"
             print "\tapi_client instance-0000002"
-            print "\tapi_client instance-0000002 vmnetwork 10.0.0.2 statistic 5 1332897600 0"
+            print "\tapi_client instance-0000002 vmnetwork 10.0.0.2 0 5 1332897600 0"
             return
         
     config = ConfigParser.ConfigParser()
