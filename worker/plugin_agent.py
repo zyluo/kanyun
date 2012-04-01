@@ -130,7 +130,7 @@ class LibvirtMonitor(object):
             if devdst is None:
                 continue
             disks.append(devdst)
-        print 'xm;_nodes', disks
+        print 'xml_nodes', disks
         return disks
 
     def _collect_cpu_mem_info(self, dom_conn):
@@ -185,7 +185,7 @@ def plugin_test():
             # TODO(lzyeval): do something meaningful
             old_data = new_data
         else:
-            for dom_name, new_raw_data in first.iteritems():
+            for dom_name, new_raw_data in new_data.iteritems():
                 old_raw_data = old_data.get(dom_name)
                 if old_raw_data is None:
                     # TODO(lzyeval): handle exception(?)
@@ -216,7 +216,7 @@ def plugin_test():
                         ret.append((_d, datas))
                 # FIXME(lzyeval): delete me
                 break
-            old_data.update(first)
+            old_data.update(new_data)
         time.sleep(1)
         
     return ret

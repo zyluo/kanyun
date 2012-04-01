@@ -142,7 +142,10 @@ def get_cf(cf_str):
         init_api()
     if not cfs.has_key(cf_str):
         print 'new connection:', cf_str
-        cfs[cf_str] = pycassa.ColumnFamily(data_db, cf_str)
+        try:
+            cfs[cf_str] = pycassa.ColumnFamily(data_db, cf_str)
+        except pycassa.cassandra.c10.ttypes.NotFoundException:
+            return None
     cf = cfs[cf_str]
     return cf
      
@@ -152,6 +155,8 @@ def api_getdata(row_id, cf_str, scf_str, time_from=0, time_to=0):
     return: recordset, count, bool(count > limit?)
     """
     cf = get_cf(cf_str)
+    if cf is None:
+        return None, 0, True
         
     if time_to == 0:
         time_to = time.time()
@@ -201,20 +206,29 @@ def analyize_data(rs, period, statistic):
     return this_period
 
 ############################# public API interface #############################
-
-def api_getbykey(row_id, cf_str, scf_str):
+def api_getbyInstanceID(row_id):
+    ""
+    cf_str = 'cpu'
+    scf_str = 'total'
+    return api_getbykey(row_id, cf_str, scf_str)
+    
+    
+def api_getbykey(row_id, cf_str, scf_str, limit=20000):
     """
+    example:cf=vmnetwork,scf=10.0.0.1,key=instance-0000002
     return: recordset, count, bool(count > limit?)
     """
     cf = get_cf(cf_str)
+    if cf is None:
+        return None, 0, True
         
-    if time_to == 0:
-        time_to = time.time()
+    time_to = time.time()
+    time_from = time_to - 24 * 60 * 60
     
 #    print "cf.get(%s, super_column=%s, column_start=%d, column_finish=%d)" % \
 #        (row_id, scf_str, time_from, float(time_to))
     try:
-        rs = cf.get(row_id, super_column=scf_str, column_start=time_from, column_finish=int(float(time_to)), column_count=20000)
+        rs = cf.get(row_id, super_column=scf_str, column_start=int(time_from), column_finish=int(float(time_to)), column_count=, limit)
         count = len(rs)
     except pycassa.cassandra.c10.ttypes.NotFoundException:
         rs = None
