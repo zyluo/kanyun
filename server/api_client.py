@@ -37,13 +37,6 @@ def invoke_getbykey(socket, row_id, cf_str, scf_str):
 
 def invoke_getbyInstanceID(socket, row_id):
     cmd = list()
-    cmd.append([u'G', row_id, "nic", "vnet01"])
-    cmd.append([u'G', row_id, "blk", "blk1"])
-    cmd.append([u'G', row_id, "cpu", "total"])
-    cmd.append([u'G', row_id, "mem", "total1"])
-    cmd.append([u'G', row_id, "mem", "total2"])
-    
-    cmd = list()
     cmd.append([u'K', row_id, "vmnetwork"])
     cmd.append([u'K', row_id, "mem_max"])
     cmd.append([u'K', row_id, "mem_free"])
@@ -51,6 +44,7 @@ def invoke_getbyInstanceID(socket, row_id):
     cmd.append([u'K', row_id, "nic_outgoing"])
     cmd.append([u'K', row_id, "blk_read"])
     cmd.append([u'K', row_id, "blk_write"])
+    cmd.append([u'G', row_id, "cpu", "total"])
     
     for i in cmd:
         cf_str = i[2]
