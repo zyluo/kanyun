@@ -51,10 +51,12 @@ class TestApiServer(unittest.TestCase):
         
         self.mox.StubOutWithMock(pycassa, 'ColumnFamily')
         pycassa.ColumnFamily().AndReturn(ColumnFamilyMox())
-        pycassa.ColumnFamily('1','2').AndReturn(ColumnFamilyMox())
+        pycassa.ColumnFamily('db', 'cpu').AndReturn(ColumnFamilyMox())
 
         self.mox.ReplayAll()
         api_server.data_db = 'db'
+        api_server.init_api()
+        api_server.get_cf("cpu")
         api_server.get_cf2("testcf")
         self.mox.VerifyAll()
         
