@@ -63,12 +63,16 @@ def autotask_heartbeat():
 def clear_die_warning():
     global config
     global living_status
+    
+    new_list = dict()
     i = 0
     for worker_id, update_time in living_status.iteritems():
         if time.time() - update_time > 2 * 60: # 2min
-            del living_status[worker_id]
+            new_list[worker_id] = update_time
             i = i + 1
-    print i, "workers cleared."
+
+    living_status = new_list
+    print i, "workers cleared:"
     
 def list_workers():
     global living_status
@@ -223,7 +227,10 @@ if __name__ == '__main__':
 
         # parse the data from worker and save to database
         if socks.get(feedback) == zmq.POLLIN:
-            msg_type, report = feedback.recv_multipart()
+            try:
+                msg_type, report = feedback.recv_multipart()
+            except zmq.core.error.ZMQError:
+                pass
             
             if plugins.has_key(msg_type) and len(report) > 0:
                 report_str = ''.join(report)
