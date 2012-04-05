@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 # encoding: utf-8
 # TAB char: space
 # Task ventilator
@@ -8,9 +9,10 @@
 # Last update: Peng Yuwei<yuwei5@staff.sina.com.cn> 2012-3-19
 
 import time
+import sys
+import signal
 import ConfigParser
 import json
-import sys
 import traceback
 import zmq
 #import db
@@ -46,6 +48,7 @@ class MSG_TYPE:
     TRAFFIC_ACCOUNTING = '2'
     AGENT = '3'
 
+running = True
 living_status = dict()
 config = ConfigParser.ConfigParser()
 
@@ -55,9 +58,25 @@ def autotask_heartbeat():
     for worker_id, update_time in living_status.iteritems():
         if time.time() - update_time > 2 * 60: # 2min
             # TODO: dispose timeout worker here 
-            print '\033[0;31m[WARNING]\033[0mworker', worker_id, "is dead"
-            
-
+            print '\033[0;31m[WARNING]\033[0mworker', worker_id, "is dead. Total=", len(living_status)
+          
+def clear_die_warning():
+    global config
+    global living_status
+    i = 0
+    for worker_id, update_time in living_status.iteritems():
+        if time.time() - update_time > 2 * 60: # 2min
+            del living_status[worker_id]
+            i = i + 1
+    print i, "workers cleared."
+    
+def list_workers():
+    global living_status
+    print "-" * 60
+    for worker_id, update_time in living_status.iteritems():
+        print 'worker', worker_id, "update @", update_time
+    print len(living_status), "workers."
+    
 def plugin_heartbeat(db, data):
     if len(data) < 3:
         print "[ERR]invalid heartbeat data"
@@ -66,6 +85,7 @@ def plugin_heartbeat(db, data):
     living_status[worker_id] = time.time()
     print "heartbeat:", data
     if 0 == status:
+        print worker_id, "quited."
         del living_status[worker_id]
 
 def plugin_decoder_agent(db, data):
@@ -101,6 +121,21 @@ def plugin_decoder_traffic_accounting(db, data):
 #                                               'protocol'], res.items()))
 #    return res
 
+def SignalHandler(sig, id):
+    global running
+    
+    if sig == signal.SIGUSR1:
+        list_workers()
+    elif sig == signal.SIGUSR2:
+        clear_die_warning()
+    elif sig == signal.SIGINT:
+        running = False
+
+def register_signal():
+    signal.signal(signal.SIGUSR1, SignalHandler)
+    signal.signal(signal.SIGUSR2, SignalHandler)
+    signal.signal(signal.SIGINT, SignalHandler)
+    
 if __name__ == '__main__':
     # register_plugin
     plugins = dict()
@@ -115,6 +150,8 @@ if __name__ == '__main__':
 
     config.read("demux.conf")
     server_cfg = dict(config.items('Demux'))
+    
+    register_signal()
 
     context = zmq.Context()
 
@@ -141,7 +178,10 @@ if __name__ == '__main__':
     data_db = pycassa.ConnectionPool('data', server_list=[server_cfg['db_host']])
 
     while True:
-        socks = dict(poller.poll(20000))
+        try:
+            socks = dict(poller.poll(20000))
+        except zmq.core.error.ZMQError:
+            pass
         
         # parse the command form client
 #        if socks.get(handler) == zmq.POLLIN:

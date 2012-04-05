@@ -6,6 +6,9 @@ import ConfigParser
 import json
 import zmq
 
+# Author: Peng Yuwei<yuwei5@staff.sina.com.cn> 2012-3-27
+# Last update: Peng Yuwei<yuwei5@staff.sina.com.cn> 2012-4-5
+
 """
 protocol:
 [CMD, row_id, cf_str, scf_str, statistic, period, time_from, time_to]
@@ -35,15 +38,22 @@ def invoke_getbykey(socket, row_id, cf_str, scf_str):
     print "%d results of cf=%s,scf=%s,key=%s" % (len(r), cf_str, scf_str, row_id)
     return r
 
+def invoke_getInstacesList(socket, cf_str):
+    param = [u'L', cf_str]
+    r = invoke(socket, param)
+    if r is None:
+        r = list()
+    for i in r:
+        print "%s" % (i)
+    print "%d results of cf=%s" % (len(r), cf_str)
+    return r
+    
 def invoke_getbyInstanceID(socket, row_id):
     cmd = list()
     cmd.append([u'K', row_id, "vmnetwork"])
-    cmd.append([u'K', row_id, "mem_max"])
-    cmd.append([u'K', row_id, "mem_free"])
-    cmd.append([u'K', row_id, "nic_incoming"])
-    cmd.append([u'K', row_id, "nic_outgoing"])
-    cmd.append([u'K', row_id, "blk_read"])
-    cmd.append([u'K', row_id, "blk_write"])
+    cmd.append([u'K', row_id, "mem"])
+    cmd.append([u'K', row_id, "nic"])
+    cmd.append([u'K', row_id, "blk"])
     cmd.append([u'G', row_id, "cpu", "total"])
     
     for i in cmd:
@@ -103,12 +113,17 @@ def main():
     if len(sys.argv) == 2:
         if sys.argv[1] in ['--help', "-h", "?"]:
             print "usage:"
-            print "\tapi_client <id>"
-            print "\tapi_client\n\tapi_client <id> <cf> <scf>"
+            print "\tapi_client"
+            print "\tapi_client <cf>"
+            print "\tapi_client -k <id>"
+            print "\tapi_client <id> <cf> <scf>"
             print "\tapi_client <id> <cf> <scf> <statistic> <period> <time_from> [time_to]"
             print "example:"
+            print "\tapi_client vmnetwork"
+            print "\tapi_client -k instance-0000002"
             print "\tapi_client instance-0000002 vmnetwork 10.0.0.2"
-            print "\tapi_client instance-0000002"
+            print "\tapi_client instance-00000012@lx12 cpu"
+            print "\tapi_client instance-00000012@lx12 mem mem_free"
             print "\tapi_client instance-0000002 vmnetwork 10.0.0.2 0 5 1332897600 0"
             return
         
@@ -127,7 +142,25 @@ def main():
         invoke_getbykey(api_client, sys.argv[1], sys.argv[2], sys.argv[3])
         return
     elif len(sys.argv) == 2:
-        invoke_getbyInstanceID(api_client, sys.argv[1])
+        invoke_getInstacesList(api_client, sys.argv[1])
+    elif len(sys.argv) == 3 and sys.argv[1] == '-k':
+        invoke_getbyInstanceID(api_client, sys.argv[2])
+        return
+    elif len(sys.argv) == 3:
+        if sys.argv[2] == 'nic' or sys.argv[2] == 'blk':
+            invoke_getbykey(api_client, sys.argv[1], sys.argv[2], sys.argv[2] + '_incoming')
+            invoke_getbykey(api_client, sys.argv[1], sys.argv[2], sys.argv[2] + '_outgoing')
+            return
+        elif sys.argv[2] == 'blk':
+            invoke_getbykey(api_client, sys.argv[1], sys.argv[2], sys.argv[2] + '_read')
+            invoke_getbykey(api_client, sys.argv[1], sys.argv[2], sys.argv[2] + '_write')
+            return
+        elif sys.argv[2] == 'mem':
+            invoke_getbykey(api_client, sys.argv[1], sys.argv[2], sys.argv[2] + '_free')
+            invoke_getbykey(api_client, sys.argv[1], sys.argv[2], sys.argv[2] + '_max')
+            return
+        else:
+            invoke_getbykey(api_client, sys.argv[1], sys.argv[2], 'total')
         return
     elif len(sys.argv) == 8:
         invoke_statistics(api_client, sys.argv[1], sys.argv[2], sys.argv[3],sys.argv[4], sys.argv[5], sys.argv[6], sys.argv[7])

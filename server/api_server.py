@@ -207,6 +207,27 @@ def analyize_data(rs, period, statistic):
     return this_period
 
 ############################# public API interface #############################
+def api_getInstancesList(cf_str):
+    cf = get_cf(cf_str)
+    if cf is None:
+        return None, 0, True
+        
+    ret = list()
+    limit = 20000
+    time_to = time.time()
+    time_from = time_to - 24 * 60 * 60
+    
+#    print "cf.get(%s, super_column=%s, column_start=%d, column_finish=%d)" % \
+#        (row_id, scf_str, time_from, float(time_to))
+    try:
+        rs = cf.get_range()
+        for i in rs:
+            ret.append(i[0])
+    except pycassa.cassandra.c10.ttypes.NotFoundException:
+        rs = None
+    
+    return ret
+    
 def api_getbyInstanceID(row_id, cf_str):
     cf = get_cf(cf_str)
     if cf is None:
@@ -241,6 +262,27 @@ def api_getbykey(row_id, cf_str, scf_str, limit=20000):
     time_to = time.time()
     time_from = time_to - 24 * 60 * 60
     
+#    print "cf.get(%s, super_column=%s, column_start=%d, column_finish=%d)" % \
+#        (row_id, scf_str, time_from, float(time_to))
+    try:
+        rs = cf.get(row_id, super_column=scf_str, column_count=limit)
+        count = len(rs)
+    except pycassa.cassandra.c10.ttypes.NotFoundException:
+        rs = None
+        count = 0
+    #print rs
+    
+    return rs, count, False if (count == 20000) else True
+
+def api_get(row_id, cf_str, scf_str, time_to, time_from, limit=20000):
+    """
+    example:cf=vmnetwork,scf=10.0.0.1,key=instance-0000002
+    return: recordset, count, bool(count > limit?)
+    """
+    cf = get_cf(cf_str)
+    if cf is None or time_to is None or time_from is None:
+        return None, 0, True
+        
 #    print "cf.get(%s, super_column=%s, column_start=%d, column_finish=%d)" % \
 #        (row_id, scf_str, time_from, float(time_to))
     try:
@@ -321,6 +363,10 @@ if __name__ == '__main__':
             row_id = msg[1]
             cf_str = msg[2]
             rs, count, _ = api_getbyInstanceID(row_id, cf_str)
+            api_server.send (json.dumps(rs))
+        elif msg[0] == 'L':
+            cf_str = msg[1]
+            rs = api_getInstancesList(cf_str)
             api_server.send (json.dumps(rs))
         else:
             api_server.send (json.dumps([]))

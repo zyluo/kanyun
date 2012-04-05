@@ -12,6 +12,7 @@
 import json
 import sys
 import time
+import signal
 import zmq
 import logging
 import ConfigParser
@@ -68,12 +69,13 @@ class Worker:
     # before the first run ,the rate is 1000(milliseconds). after the first run, rate is 5000(milliseconds)
     working_rate = 1000
     
-    def __init__(self, context = None, feedback_host='127.0.0.1', feedback_port=5559, logger = None):
+    def __init__(self, context = None, feedback_host='127.0.0.1', feedback_port=5559, logger = None, worker_id = 'Black'):
         """ context is zeroMQ socket context"""
         self.plugins = list()
         self.last_work_min = None # this value is None until first update
         self.update_time()
         self.logger = logger
+        self.worker_id = worker_id
         if self.logger is None:
             self.logger = logging.getLogger()
             handler = logging.FileHandler("/tmp/worker.log")
@@ -138,8 +140,28 @@ class Worker:
         
         self.update_time()
         return True
+        
+    def end(self):
+        info = [self.worker_id, time.time(), 0]
+        self.send([MSG_TYPE.HEART_BEAT, json.dumps(info)])
     
 running = True
+
+def SignalHandler(sig, id):
+    global running
+    
+    if sig == signal.SIGUSR1:
+        running = False
+    elif sig == signal.SIGUSR2:
+        pass
+    elif sig == signal.SIGINT:
+        print 'Waiting for quit...'
+        running = False
+
+def register_signal():
+    signal.signal(signal.SIGUSR1, SignalHandler)
+    signal.signal(signal.SIGUSR2, SignalHandler)
+    signal.signal(signal.SIGINT, SignalHandler)
 
 def main(param):
 #    if len(sys.argv) <> 2:
@@ -167,11 +189,14 @@ def main(param):
             return
         WORKER_ID = sys.argv[1]
     
+    if cfg['log'] is None:
+        cfg['log'] = "/tmp/worker.log"
     logger=logging.getLogger()
-    handler=logging.FileHandler("/tmp/worker.log")
+    handler=logging.FileHandler(cfg['log'])
     logger.addHandler(handler)
     logger.setLevel(logging.NOTSET)
-
+    
+    register_signal()
 
     running = param
     context = zmq.Context()
@@ -182,7 +207,7 @@ def main(param):
 #    broadcast.connect("tcp://localhost:5558")
     broadcast.setsockopt(zmq.SUBSCRIBE, "lb")
 
-    worker = Worker(context=context, feedback_host=cfg['feedback_host'], feedback_port=cfg['feedback_port'], logger=logger)
+    worker = Worker(context=context, feedback_host=cfg['feedback_host'], feedback_port=cfg['feedback_port'], logger=logger, worker_id = WORKER_ID)
     # TODO: the plugin come form configure file maybe better
     #worker.register_plugin(plugin_local_cpu)
     worker.register_plugin(plugin_heartbeat)
@@ -192,14 +217,20 @@ def main(param):
 #    feedback = context.socket(zmq.PUSH)
 #    feedback.connect("tcp://localhost:5559")
 
+    print "Starting worker..."
+    print "id=%s, log=%s" % (WORKER_ID, cfg['log'])
+    print "server is %s:%s" % (cfg['feedback_host'], cfg['feedback_port'])
+
     # Process messages from broadcast
     poller = zmq.Poller()
     poller.register(broadcast, zmq.POLLIN)
 
     # Process messages from both sockets
     while running:
-        socks = dict(poller.poll(worker.working_rate))
-        
+        try:
+            socks = dict(poller.poll(worker.working_rate))
+        except zmq.core.error.ZMQError:
+            pass
         # parse the command from server
         if socks.get(broadcast) == zmq.POLLIN:
             msg_type, msg_id, msg_body = broadcast.recv_multipart()
@@ -220,7 +251,7 @@ def main(param):
         
         if not running:
             break
-        
+    poller.unregister(broadcast)
         
 if __name__ == '__main__':
     main(True)
