@@ -18,6 +18,7 @@ import zmq
 
 from kanyun.database.cassadb import CassaDb
 import plugin_agent_srv
+from kanyun.common.const import *
 
 """
 Save the vm's system info data to db.
@@ -40,12 +41,6 @@ protocol:
     http://wiki.sinaapp.com/doku.php?id=monitoring
 """
 
-class MSG_TYPE:
-    """same as worker.py"""
-    HEART_BEAT = '0'
-    LOCAL_INFO = '1'
-    TRAFFIC_ACCOUNTING = '2'
-    AGENT = '3'
 
 living_status = dict()
 
@@ -56,19 +51,20 @@ def autotask_heartbeat():
             # TODO: dispose timeout worker here 
             print '\033[0;31m[WARNING]\033[0mworker', worker_id, "is dead. Total=", len(living_status)
           
-def clear_die_warning():
+def clean_die_warning():
     global config
     global living_status
     
     new_list = dict()
     i = 0
     for worker_id, update_time in living_status.iteritems():
-        if time.time() - update_time > 2 * 60: # 2min
+        if time.time() - update_time < 2 * 60: # 2min
             new_list[worker_id] = update_time
+        else:
             i = i + 1
 
     living_status = new_list
-    print i, "workers cleared:"
+    print i, "workers cleaned:"
     
 def list_workers():
     global living_status
@@ -128,7 +124,7 @@ def SignalHandler(sig, id):
     if sig == signal.SIGUSR1:
         list_workers()
     elif sig == signal.SIGUSR2:
-        clear_die_warning()
+        clean_die_warning()
     elif sig == signal.SIGINT:
         running = False
 

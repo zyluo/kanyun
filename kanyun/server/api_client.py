@@ -6,6 +6,8 @@ import ConfigParser
 import json
 import zmq
 
+from kanyun.common.const import *
+
 # Author: Peng Yuwei<yuwei5@staff.sina.com.cn> 2012-3-27
 # Last update: Peng Yuwei<yuwei5@staff.sina.com.cn> 2012-4-5
 
@@ -28,14 +30,14 @@ def invoke(socket, param):
     
     return json.loads(message)
     
-def invoke_getbykey(socket, row_id, cf_str, scf_str):
+def invoke_getbykey2(socket, row_id, cf_str, scf_str):
     param = [u'G', row_id, cf_str, scf_str]
     r = invoke(socket, param)
     if r is None:
         r = dict()
-    for k, i in r.iteritems():
-        print "{%s:%s}" % (k, i)
-    print "%d results of cf=%s,scf=%s,key=%s" % (len(r), cf_str, scf_str, row_id)
+#    for k, i in r.iteritems():
+#        print "{%s:%s}" % (k, i)
+#    print "%d results of cf=%s,scf=%s,key=%s" % (len(r), cf_str, scf_str, row_id)
     return r
 
 def invoke_getInstacesList(socket, cf_str):
@@ -43,12 +45,13 @@ def invoke_getInstacesList(socket, cf_str):
     r = invoke(socket, param)
     if r is None:
         r = list()
-    for i in r:
-        print "%s" % (i)
-    print "%d results of cf=%s" % (len(r), cf_str)
+#    for i in r:
+#        print "%s" % (i)
+#    print "%d results of cf=%s" % (len(r), cf_str)
     return r
     
-def invoke_getbyInstanceID(socket, row_id):
+def invoke_getbykey(socket, row_id):
+    ret = list()
     cmd = list()
     cmd.append([u'K', row_id, "vmnetwork"])
     cmd.append([u'K', row_id, "mem"])
@@ -63,12 +66,13 @@ def invoke_getbyInstanceID(socket, row_id):
         if r is None:
             r = dict()
 #        print r
-        for k, i in r.iteritems():
-            print "%s.%s %d results" % (cf_str, k, len(i))
+        ret.append(r)
+#        for k, i in r.iteritems():
+#            print "%s.%s %d results" % (cf_str, k, len(i))
 #            timestr = time.strftime("%m-%d %H:%M:%S", time.localtime(float(k)))
 #            print "%s %s=%s" % (timestr, cf_str, i)
 #        print "%d results of cf=%s,scf=%s,key=%s" % (len(r), cf_str, scf_str, row_id)
-
+    return ret
     
 def invoke_statistics(api_client, row_id, cf_str, scf_str, statistic, period=5, time_from=0, time_to=0):
     #param_tmpl = ['S', 'instance-00000001@pyw.novalocal', 'cpu', 'total', 0, 5, 1332897600, 0]
@@ -101,74 +105,45 @@ def invoke_statistics(api_client, row_id, cf_str, scf_str, statistic, period=5, 
         r = invoke(api_client, param)
         print 'AVERAGE=', '(no result)' if r is None else r.values()[0]
     
-def main():
-#    if len(sys.argv) <> 2:
-#        logging.debug( "usage: python %s [1-3]" % sys.argv[0]
-#        sys.exit(0)
 
-#    worker_id = sys.argv[1]
-#    if worker_id not in ['1', '2', '3']:
-#        logging.debug( "usage: python %s [1-3]" % sys.argv[0]
-#        sys.exit(0)
-    if len(sys.argv) == 2:
-        if sys.argv[1] in ['--help', "-h", "?"]:
-            print "usage:"
-            print "\tapi_client"
-            print "\tapi_client <cf>"
-            print "\tapi_client -k <id>"
-            print "\tapi_client <id> <cf> <scf>"
-            print "\tapi_client <id> <cf> <scf> <statistic> <period> <time_from> [time_to]"
-            print "example:"
-            print "\tapi_client vmnetwork"
-            print "\tapi_client -k instance-0000002"
-            print "\tapi_client instance-0000002 vmnetwork 10.0.0.2"
-            print "\tapi_client instance-00000012@lx12 cpu"
-            print "\tapi_client instance-00000012@lx12 mem mem_free"
-            print "\tapi_client instance-0000002 vmnetwork 10.0.0.2 0 5 1332897600 0"
-            return
+class ApiClient():
+    def __init__(self, api_host = '127.0.0.1', api_port = '5556'):
+        # default value
+        self.cf_str = ''
+        self.scf_str = ''
+        self.statistic = 0
+        self.period = 5
+        self.time_from = 0
+        self.time_to = 0
+        self.key = ''
         
-    config = ConfigParser.ConfigParser()
-    config.read("demux.conf")
-    cfg = dict(config.items('Client'))
-        
-    context = zmq.Context()
-
-    #  Socket to talk to server
-#    print "Connecting to hello world server..."
-    api_client = context.socket(zmq.REQ)
-    api_client.connect("tcp://%(api_host)s:%(api_port)s" % cfg)
-    
-    if len(sys.argv) == 4:
-        invoke_getbykey(api_client, sys.argv[1], sys.argv[2], sys.argv[3])
-        return
-    elif len(sys.argv) == 2:
-        invoke_getInstacesList(api_client, sys.argv[1])
-    elif len(sys.argv) == 3 and sys.argv[1] == '-k':
-        invoke_getbyInstanceID(api_client, sys.argv[2])
-        return
-    elif len(sys.argv) == 3:
-        if sys.argv[2] == 'nic' or sys.argv[2] == 'blk':
-            invoke_getbykey(api_client, sys.argv[1], sys.argv[2], sys.argv[2] + '_incoming')
-            invoke_getbykey(api_client, sys.argv[1], sys.argv[2], sys.argv[2] + '_outgoing')
-            return
-        elif sys.argv[2] == 'blk':
-            invoke_getbykey(api_client, sys.argv[1], sys.argv[2], sys.argv[2] + '_read')
-            invoke_getbykey(api_client, sys.argv[1], sys.argv[2], sys.argv[2] + '_write')
-            return
-        elif sys.argv[2] == 'mem':
-            invoke_getbykey(api_client, sys.argv[1], sys.argv[2], sys.argv[2] + '_free')
-            invoke_getbykey(api_client, sys.argv[1], sys.argv[2], sys.argv[2] + '_max')
-            return
+        self.context = zmq.Context()
+        self.socket = self.context.socket(zmq.REQ)
+        self.socket.connect("tcp://%s:%s" % (api_host, api_port))
+    def invoke(self):
+        param = ['S', self.key, self.cf_str, self.scf_str, int(self.statistic), int(self.period), int(self.time_from), int(self.time_to)]
+        r = invoke(self.socket, param)
+        return r
+    def get_max(self):
+        self.period = STATISTIC.SUM
+        r = self.invoke()
+        return None if r is None else r.values()[0]
+    def get_min(self):
+        self.period = STATISTIC.MINIMUM
+        r = self.invoke()
+        return None if r is None else r.values()[0]
+    def get_sum(self):
+        self.period = STATISTIC.SUM
+        r = self.invoke()
+        return None if r is None else r.values()[0]
+    def get_average(self):
+        self.period = STATISTIC.AVERAGE
+        r = self.invoke()
+        return None if r is None else r.values()[0]
+    def getbykey(self, key, cf_str=None, scf_str=None):
+        if cf_str is None or scf_str is None:
+            return invoke_getbykey(self.socket, key)
         else:
-            invoke_getbykey(api_client, sys.argv[1], sys.argv[2], 'total')
-        return
-    elif len(sys.argv) == 8:
-        invoke_statistics(api_client, sys.argv[1], sys.argv[2], sys.argv[3],sys.argv[4], sys.argv[5], sys.argv[6], sys.argv[7])
-        return
-    elif len(sys.argv) == 7:
-        invoke_statistics(api_client, sys.argv[1], sys.argv[2], sys.argv[3],sys.argv[4], sys.argv[5], sys.argv[6], '0')
-        return
-
-    
-if __name__ == '__main__':
-    main()
+            return invoke_getbykey2(self.socket, row_id, cf_str, scf_str)
+    def getlist(self, cf_str):
+        return invoke_getInstacesList(self.socket, cf_str)

@@ -12,28 +12,28 @@ import traceback
 import ConfigParser
 import json
 import zmq
+from kanyun.common.const import *
 from kanyun.server import api_server
-from kanyun.server.api_server import STATISTIC
 
 from kanyun.database.cassadb import CassaDb
 
 if __name__ == '__main__':
     config = ConfigParser.ConfigParser()
-    config.read("demux.conf")
-    server_cfg = dict(config.items('Demux'))
+    config.read("kanyun.conf")
+    api_cfg = dict(config.items('api'))
 
     context = zmq.Context()
     
-#    data_db = pycassa.ConnectionPool('data', server_list=[server_cfg['db_host']])
+#    data_db = pycassa.ConnectionPool('data', server_list=[api_cfg['db_host']])
 
     # Socket to receive messages on
     api_socket = context.socket(zmq.REP)
-    api_socket.bind("tcp://%(api_host)s:%(api_port)s" % server_cfg)
-    print "listen tcp://%(api_host)s:%(api_port)s" % server_cfg
+    api_socket.bind("tcp://%(api_host)s:%(api_port)s" % api_cfg)
+    print "listen tcp://%(api_host)s:%(api_port)s" % api_cfg
 
     # data DB
-    db = CassaDb('data', server_cfg['db_host'])
-#    data_db = pycassa.ConnectionPool('data', server_list=[server_cfg['db_host']])
+#    db = CassaDb('data', api_cfg['db_host'])
+#    data_db = pycassa.ConnectionPool('data', server_list=[api_cfg['db_host']])
 
     while True:
         message = api_socket.recv()
@@ -50,7 +50,7 @@ if __name__ == '__main__':
             period = msg[5]
             time_from = msg[6]
             time_to = msg[7]
-            rs, count, _ = api_statistic(row_id, cf_str, scf_str, statistic, period=period, time_from=time_from, time_to=time_to)
+            rs, count, _ = api_server.api_statistic(row_id, cf_str, scf_str, statistic, period=period, time_from=time_from, time_to=time_to)
             api_socket.send (json.dumps(rs))
         elif msg[0] == 'G':
             print '*' * 60
@@ -58,18 +58,18 @@ if __name__ == '__main__':
             row_id = msg[1]
             cf_str = msg[2]
             scf_str = msg[3]
-            rs, count, _ = api_getbykey(row_id, cf_str, scf_str)
+            rs, count, _ = api_server.api_getbykey(row_id, cf_str, scf_str)
             api_socket.send (json.dumps(rs))
         elif msg[0] == 'K':
             print '*' * 60
             print "recv:", msg
             row_id = msg[1]
             cf_str = msg[2]
-            rs, count, _ = api_getbyInstanceID(row_id, cf_str)
+            rs, count, _ = api_server.api_getbyInstanceID(row_id, cf_str)
             api_socket.send (json.dumps(rs))
         elif msg[0] == 'L':
             cf_str = msg[1]
-            rs = api_getInstancesList(cf_str)
+            rs = api_server.api_getInstancesList(cf_str)
             api_socket.send (json.dumps(rs))
         else:
             api_socket.send (json.dumps([]))

@@ -10,12 +10,13 @@
 
 import sys
 import time
+import types
 import json
 import traceback
 import ConfigParser
 import zmq
+from kanyun.common.const import *
 from kanyun.database.cassadb import CassaDb
-
 
 """
 Save the vm's system info data to db.
@@ -39,12 +40,6 @@ protocol:
 [u'S', u'instance-00000001@pyw.novalocal', u'cpu', u'total', 0, 5, 1332897600, 0]
 """
 
-class STATISTIC:
-    SUM     = 0
-    MAXIMUM = 1
-    MINIMUM = 2
-    AVERAGE = 3
-    SAMPLES = 4
 
 class Statistics():
     def __init__(self):
@@ -113,17 +108,27 @@ db = None
 # example: {'cpu', ColumnFamily()}
 """
 
-#def init_api():
-#    global db
-#    config = ConfigParser.ConfigParser()
-#    config.read("demux.conf")
-#    server_cfg = dict(config.items('Demux'))
-#    db = CassaDb('data', server_cfg['db_host'])
+def get_db():
+    global db
+    if db is None:
+        config = ConfigParser.ConfigParser()
+        config.read("kanyun.conf")
+        api_cfg = dict(config.items('api'))
+        db = CassaDb('data', api_cfg['db_host'])
+    return db
     
 def api_getdata(row_id, cf_str, scf_str, time_from=0, time_to=0):
     """
     return: recordset, count, bool(count > limit?)
     """
+    if not type(row_id) is types.StringType \
+        or not type(cf_str) is types.StringType \
+        or not type(scf_str) is types.StringType \
+        or not type(time_from) is types.IntType \
+        or not type(time_to) is types.IntType:
+        return None, 0, True
+        
+    db = get_db()
         
     if time_to == 0:
         time_to = time.time()
@@ -135,8 +140,8 @@ def api_getdata(row_id, cf_str, scf_str, time_from=0, time_to=0):
     
 def analyize_data(rs, period, statistic):
     """[private func]analyize the data"""
-    if rs is None:
-        return
+    if rs is None or not type(period) is types.IntType or type(statistic) is types.IntType:
+        return None
     t = 0
     key_time = 0
     st = Statistics()
@@ -167,13 +172,14 @@ def analyize_data(rs, period, statistic):
 
 ############################# public API interface #############################
 def api_getInstancesList(cf_str):
+    if not type(cf_str) is types.StringType:
+        return None
     ret = list()
     limit = 20000
     time_to = time.time()
     time_from = time_to - 24 * 60 * 60
+    db = get_db()
     
-#    print "cf.get(%s, super_column=%s, column_start=%d, column_finish=%d)" % \
-#        (row_id, scf_str, time_from, float(time_to))
     rs = db.get_range(cf_str)
     if not rs is None:
         for i in rs:
@@ -182,6 +188,10 @@ def api_getInstancesList(cf_str):
     return ret
     
 def api_getbyInstanceID(row_id, cf_str):
+    if not type(row_id) is types.StringType \
+        or not type(cf_str) is types.StringType:
+        return None, 0, True
+    db = get_db()
     rs = db.getbykey(cf_str, row_id)
     count = 0 if rs is None else len(rs)
     
@@ -193,37 +203,30 @@ def api_getbykey(row_id, cf_str, scf_str, limit=20000):
     example:cf=vmnetwork,scf=10.0.0.1,key=instance-0000002
     return: recordset, count, bool(count > limit?)
     """
-    db.getbykey2(cf_str, key=row_id, super_column=scf_str, column_count=limit)
+    if not type(row_id) is types.StringType \
+        or not type(cf_str) is types.StringType \
+        or not type(scf_str) is types.StringType \
+        or not type(limit) is types.IntType:
+        return None, 0, True
+    db = get_db()
+    rs = db.getbykey2(cf_str, key=row_id, super_column=scf_str, column_count=limit)
     count = 0 if rs is None else len(rs)
     
     return rs, count, False if (count == 20000) else True
 
-#def api_get(row_id, cf_str, scf_str, time_to, time_from, limit=20000):
-#    """
-#    example:cf=vmnetwork,scf=10.0.0.1,key=instance-0000002
-#    return: recordset, count, bool(count > limit?)
-#    """
-#    cf = get_cf(cf_str)
-#    if cf is None or time_to is None or time_from is None:
-#        return None, 0, True
-#        
-##    print "cf.get(%s, super_column=%s, column_start=%d, column_finish=%d)" % \
-##        (row_id, scf_str, time_from, float(time_to))
-#    try:
-#        rs = cf.get(row_id, super_column=scf_str, column_start=int(time_from), column_finish=int(float(time_to)), column_count=limit)
-#        count = len(rs)
-#    except pycassa.cassandra.c10.ttypes.NotFoundException:
-#        rs = None
-#        count = 0
-#    #print rs
-#    
-#    return rs, count, False if (count == 20000) else True
-    
-    
 def api_statistic(row_id, cf_str, scf_str, statistic, period=5, time_from=0, time_to=0):
     """statistic is STATISTIC enum
     period default=5 minutes
     time_to default=0(now)"""
+    if not type(row_id) is types.StringType \
+        or not type(cf_str) is types.StringType \
+        or not type(scf_str) is types.StringType \
+        or not type(statistic) is types.IntType \
+        or not type(period) is types.IntType \
+        or not type(time_from) is types.IntType \
+        or not type(time_to) is types.IntType:
+        return None, 0, True
+        
     ret_len = 0
     rs, count, all_data = api_getdata(row_id, cf_str, scf_str, time_from, time_to)
     if not rs is None and count > 0:
@@ -238,62 +241,4 @@ def api_statistic(row_id, cf_str, scf_str, statistic, period=5, time_from=0, tim
     return ret, ret_len, all_data
 
 ########################## end public API interface #############################
-
-if __name__ == '__main__':
-    config = ConfigParser.ConfigParser()
-    config.read("demux.conf")
-    server_cfg = dict(config.items('Demux'))
-
-    context = zmq.Context()
-    
-#    data_db = pycassa.ConnectionPool('data', server_list=[server_cfg['db_host']])
-
-    # Socket to receive messages on
-    api_server = context.socket(zmq.REP)
-    api_server.bind("tcp://%(api_host)s:%(api_port)s" % server_cfg)
-    print "listen tcp://%(api_host)s:%(api_port)s" % server_cfg
-
-    # data DB
-    db = CassaDb('data', server_cfg['db_host'])
-#    data_db = pycassa.ConnectionPool('data', server_list=[server_cfg['db_host']])
-
-    while True:
-        message = api_server.recv()
-        msg = json.loads(message)
-        
-        if msg[0] == 'S':
-            #[u'S', u'instance-00000001@pyw.novalocal', u'cpu', u'total', 0, 5, 1332897600, 0]
-            print '*' * 60
-            print "recv:", msg
-            row_id = msg[1]
-            cf_str = msg[2]
-            scf_str = msg[3]
-            statistic = msg[4]
-            period = msg[5]
-            time_from = msg[6]
-            time_to = msg[7]
-            rs, count, _ = api_statistic(row_id, cf_str, scf_str, statistic, period=period, time_from=time_from, time_to=time_to)
-            api_server.send (json.dumps(rs))
-        elif msg[0] == 'G':
-            print '*' * 60
-            print "recv:", msg
-            row_id = msg[1]
-            cf_str = msg[2]
-            scf_str = msg[3]
-            rs, count, _ = api_getbykey(row_id, cf_str, scf_str)
-            api_server.send (json.dumps(rs))
-        elif msg[0] == 'K':
-            print '*' * 60
-            print "recv:", msg
-            row_id = msg[1]
-            cf_str = msg[2]
-            rs, count, _ = api_getbyInstanceID(row_id, cf_str)
-            api_server.send (json.dumps(rs))
-        elif msg[0] == 'L':
-            cf_str = msg[1]
-            rs = api_getInstancesList(cf_str)
-            api_server.send (json.dumps(rs))
-        else:
-            api_server.send (json.dumps([]))
-            continue
 

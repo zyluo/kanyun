@@ -5,6 +5,9 @@
 # Author: Peng Yuwei<yuwei5@staff.sina.com.cn> 2012-4-6
 # Last update: Peng Yuwei<yuwei5@staff.sina.com.cn> 2012-4-6
 
+# python setup.py develop
+# python setup.py install
+
 import sys
 from setuptools import setup, find_packages
 
@@ -16,10 +19,11 @@ setup(
     version = "0.1",
 #    package_dir = {'':'monitoring'},   # tell distutils packages are under src
     packages = ['kanyun',
-              'kanyun.database',
-              'kanyun.server',
-              'kanyun.worker',
-              'kanyun.client'],
+            'kanyun.common',
+            'kanyun.database',
+            'kanyun.server',
+            'kanyun.worker',
+            'kanyun.client'],
     # Project uses reStructuredText, so ensure that the docutils get
     # installed or upgraded on the target machine
     install_requires = requirements,

@@ -1,0 +1,76 @@
+#!/usr/bin/env python
+
+import sys
+import time
+import ConfigParser
+import json
+import zmq
+
+from kanyun.server import api_client
+
+# Author: Peng Yuwei<yuwei5@staff.sina.com.cn> 2012-3-27
+# Last update: Peng Yuwei<yuwei5@staff.sina.com.cn> 2012-4-5
+
+def main():
+    if len(sys.argv) == 2:
+        if sys.argv[1] in ['--help', "-h", "?"]:
+            print "usage:"
+            print "\tapi_client"
+            print "\tapi_client <cf>"
+            print "\tapi_client -k <id>"
+            print "\tapi_client <id> <cf> <scf>"
+            print "\tapi_client <id> <cf> <scf> <statistic> <period> <time_from> [time_to]"
+            print "example:"
+            print "\tapi_client vmnetwork"
+            print "\tapi_client -k instance-0000002"
+            print "\tapi_client instance-0000002 vmnetwork 10.0.0.2"
+            print "\tapi_client instance-00000012@lx12 cpu"
+            print "\tapi_client instance-00000012@lx12 mem mem_free"
+            print "\tapi_client instance-0000002 vmnetwork 10.0.0.2 0 5 1332897600 0"
+            return
+        
+    config = ConfigParser.ConfigParser()
+    config.read("kanyun.conf")
+    cfg = dict(config.items('client'))
+        
+    context = zmq.Context()
+
+    #  Socket to talk to server
+#    print "Connecting to hello world server..."
+    api_socket = context.socket(zmq.REQ)
+    api_socket.connect("tcp://%(api_host)s:%(api_port)s" % cfg)
+    
+    if len(sys.argv) == 4:
+        api_client.invoke_getbykey2(api_socket, sys.argv[1], sys.argv[2], sys.argv[3])
+        return
+    elif len(sys.argv) == 2:
+        api_client.invoke_getInstacesList(api_socket, sys.argv[1])
+    elif len(sys.argv) == 3 and sys.argv[1] == '-k':
+        api_client.invoke_getbykey(api_socket, sys.argv[2])
+        return
+    elif len(sys.argv) == 3:
+        if sys.argv[2] == 'nic' or sys.argv[2] == 'blk':
+            api_client.invoke_getbykey2(api_socket, sys.argv[1], sys.argv[2], sys.argv[2] + '_incoming')
+            api_client.invoke_getbykey2(api_socket, sys.argv[1], sys.argv[2], sys.argv[2] + '_outgoing')
+            return
+        elif sys.argv[2] == 'blk':
+            api_client.invoke_getbykey2(api_socket, sys.argv[1], sys.argv[2], sys.argv[2] + '_read')
+            api_client.invoke_getbykey2(api_socket, sys.argv[1], sys.argv[2], sys.argv[2] + '_write')
+            return
+        elif sys.argv[2] == 'mem':
+            api_client.invoke_getbykey2(api_socket, sys.argv[1], sys.argv[2], sys.argv[2] + '_free')
+            api_client.invoke_getbykey2(api_socket, sys.argv[1], sys.argv[2], sys.argv[2] + '_max')
+            return
+        else:
+            api_client.invoke_getbykey2(api_socket, sys.argv[1], sys.argv[2], 'total')
+        return
+    elif len(sys.argv) == 8:
+        api_client.invoke_statistics(api_socket, sys.argv[1], sys.argv[2], sys.argv[3],sys.argv[4], sys.argv[5], sys.argv[6], sys.argv[7])
+        return
+    elif len(sys.argv) == 7:
+        api_client.invoke_statistics(api_socket, sys.argv[1], sys.argv[2], sys.argv[3],sys.argv[4], sys.argv[5], sys.argv[6], '0')
+        return
+
+    
+if __name__ == '__main__':
+    main()

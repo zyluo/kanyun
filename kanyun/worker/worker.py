@@ -6,7 +6,7 @@
 # Adds pub-sub flow to receive and respond to kill signal
 #
 # Author: Jeremy Avnet (brainsik) <spork(dash)zmq(at)theory(dot)org>
-# Last update: Peng Yuwei<yuwei5@staff.sina.com.cn> 2012-3-19
+# Last update: Peng Yuwei<pengyuwei@gmail.com> 2012-4-6
 #
 
 import json
@@ -17,19 +17,13 @@ import zmq
 import logging
 import ConfigParser
 
+from kanyun.common.const import *
 """
 protocol:
     http://wiki.sinaapp.com/doku.php?id=monitoring
 """
-
 WORKER_ID = "black"
 
-class MSG_TYPE:
-    """same as server.py"""
-    HEART_BEAT = '0'
-    LOCAL_INFO = '1'
-    TRAFFIC_ACCOUNTING = '2'
-    AGENT = '3'
 
 # plugin
 def plugin_heartbeat(status = 1):
@@ -163,95 +157,3 @@ def register_signal():
     signal.signal(signal.SIGUSR2, SignalHandler)
     signal.signal(signal.SIGINT, SignalHandler)
 
-def main(param):
-#    if len(sys.argv) <> 2:
-#        logging.debug( "usage: python %s [1-3]" % sys.argv[0]
-#        sys.exit(0)
-
-#    worker_id = sys.argv[1]
-#    if worker_id not in ['1', '2', '3']:
-#        logging.debug( "usage: python %s [1-3]" % sys.argv[0]
-#        sys.exit(0)
-    global WORKER_ID
-    
-    if len(sys.argv) == 2 and sys.argv[1] == '--help':
-        print 'usage:\nuse speical id: worker <id>\nuse id in config file: worker'
-        return
-
-    config = ConfigParser.ConfigParser()
-    config.read("monitor_worker.conf")
-    cfg = dict(config.items('Worker'))
-    
-    WORKER_ID = cfg['id']
-    if len(sys.argv) == 2:
-        if len(sys.argv[1]) > 16:
-            print 'Invalid worker id.'
-            return
-        WORKER_ID = sys.argv[1]
-    
-    if cfg['log'] is None:
-        cfg['log'] = "/tmp/worker.log"
-    logger=logging.getLogger()
-    handler=logging.FileHandler(cfg['log'])
-    logger.addHandler(handler)
-    logger.setLevel(logging.NOTSET)
-    
-    register_signal()
-
-    running = param
-    context = zmq.Context()
-
-    # Socket for control input
-    broadcast = context.socket(zmq.SUB)
-    broadcast.connect("tcp://%(broadcast_host)s:%(broadcast_port)s" % cfg)
-#    broadcast.connect("tcp://localhost:5558")
-    broadcast.setsockopt(zmq.SUBSCRIBE, "lb")
-
-    worker = Worker(context=context, feedback_host=cfg['feedback_host'], feedback_port=cfg['feedback_port'], logger=logger, worker_id = WORKER_ID)
-    # TODO: the plugin come form configure file maybe better
-    #worker.register_plugin(plugin_local_cpu)
-    worker.register_plugin(plugin_heartbeat)
-    worker.register_plugin(plugin_traffic_accounting_info)
-    worker.register_plugin(plugin_agent_info)
-    # Socket to send messages to
-#    feedback = context.socket(zmq.PUSH)
-#    feedback.connect("tcp://localhost:5559")
-
-    print "Starting worker..."
-    print "id=%s, log=%s" % (WORKER_ID, cfg['log'])
-    print "server is %s:%s" % (cfg['feedback_host'], cfg['feedback_port'])
-
-    # Process messages from broadcast
-    poller = zmq.Poller()
-    poller.register(broadcast, zmq.POLLIN)
-
-    # Process messages from both sockets
-    while running:
-        try:
-            socks = dict(poller.poll(worker.working_rate))
-        except zmq.core.error.ZMQError:
-            pass
-        # parse the command from server
-        if socks.get(broadcast) == zmq.POLLIN:
-            msg_type, msg_id, msg_body = broadcast.recv_multipart()
-            # Process task
-            message = json.loads(msg_body)
-            if message['dest'] in ['ALL', worker_id]:
-                logger.debug( message['cmd'], message['opt'] )
-            # Send results to feedback
-            worker.send([msg_type, msg_id,
-                                     json.dumps({'worker_id': worker_id,
-                                                 'status': 200})])
-#            feedback.send_multipart([msg_type, msg_id,
-#                                     json.dumps({'worker_id': worker_id,
-#                                                 'status': 200})])
-    
-        # push the info data to server
-        worker.info_push()
-        
-        if not running:
-            break
-    poller.unregister(broadcast)
-        
-if __name__ == '__main__':
-    main(True)

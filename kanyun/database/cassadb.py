@@ -27,7 +27,7 @@ class CassaDb():
         """insert(key, columns[, timestamp][, ttl][, write_consistency_level])
         cf: ColumnFamily String"""
         cf = self.get_cf(cf_str)
-        if cf is None:
+        if cf is None or key is None or values is None:
             return
         
         cf.insert(key, values)
@@ -53,12 +53,15 @@ class CassaDb():
         """
         rs = None
         cf = self.get_cf(cf_str)
-        if cf is None:
+        if cf is None or key is None or super_column is None or column_start is None or column_finish is None:
             return rs
         
         try:
             rs = cf.get(key=key, super_column=super_column, column_start=column_start, column_finish=column_finish, column_count=column_count)
         except pycassa.cassandra.c10.ttypes.NotFoundException:
+            pass
+        except pycassa.cassandra.c10.ttypes.InvalidRequestException:
+            print 'cassandra db InvalidRequest.'
             pass
             
         return rs
@@ -69,7 +72,7 @@ class CassaDb():
         """
         rs = None
         cf = self.get_cf(cf_str)
-        if cf is None:
+        if cf is None or key is None:
             return rs
         
         try:
@@ -85,11 +88,13 @@ class CassaDb():
         """
         rs = None
         cf = self.get_cf(cf_str)
-        if not cf is None:
-            try:
-                rs = cf.get(key=key, super_column=super_column, column_count=column_count)
-            except pycassa.cassandra.c10.ttypes.NotFoundException:
-                pass
+        if cf is None or key is None or super_column is None or column_count is None:
+            return None
+            
+        try:
+            rs = cf.get(key=key, super_column=super_column, column_count=column_count)
+        except pycassa.cassandra.c10.ttypes.NotFoundException:
+            pass
             
         return rs
         

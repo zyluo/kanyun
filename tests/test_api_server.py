@@ -1,3 +1,10 @@
+#!/usr/bin/env python
+# encoding: utf-8
+# TAB char: space
+#
+# Author: Peng Yuwei<yuwei5@staff.sina.com.cn> 2012-3-27
+# Last update: Peng Yuwei<yuwei5@staff.sina.com.cn> 2012-4-6
+
 import unittest
 import time
 import sys
@@ -15,7 +22,7 @@ class StatisticsTest(unittest.TestCase):
         self.mox.UnsetStubs()
         
     def testStatistics(self):
-        s = api_server.Statistics()
+        s = Statistics()
         isum = 0.0
         val = 1
         for i in range(1,11):
@@ -45,21 +52,24 @@ class TestApiServer(unittest.TestCase):
     def tearDown(self):
         self.mox.UnsetStubs()
 
-    def testGetCf(self):
-        m = self.mox
-        self.mox.StubOutWithMock(api_server, 'init_api')
-        api_server.init_api().AndReturn(InitApiMox())
-        
-        self.mox.StubOutWithMock(pycassa, 'ColumnFamily')
-        pycassa.ColumnFamily().AndReturn(ColumnFamilyMox())
-        pycassa.ColumnFamily('db', 'cpu').AndReturn(ColumnFamilyMox())
-
-        self.mox.ReplayAll()
-        api_server.data_db = 'db'
-        api_server.init_api()
-        api_server.get_cf("cpu")
-        api_server.get_cf2("testcf")
-        self.mox.VerifyAll()
+    def testParamTypeCheck(self):
+        row_id = None
+        cf_str = None
+        scf_str = None
+        period = None
+        statistic = None
+        rs1, count, _ = api_statistic(None, None, None, None, period=5, time_from=0, time_to=0)
+        rs2, count, _ = api_getbykey(None, cf_str, scf_str, limit=20000)
+        rs3, count, _ = api_getbyInstanceID(row_id, cf_str)
+        rs4, count, _ = api_getdata(row_id, cf_str, scf_str, time_from=0, time_to=0)
+        rs5 = api_getInstancesList(None)
+        rs6 = analyize_data(None, period, statistic)
+        assert(rs1 is None)
+        assert(rs2 is None)
+        assert(rs3 is None)
+        assert(rs4 is None)
+        assert(rs5 is None)
+        assert(rs6 is None)
         
 #    
     def test_api_1(self):
@@ -113,7 +123,7 @@ if __name__ == '__main__':
     time.clock()
     ApiTestSuite = unittest.TestSuite()
     ApiTestSuite.addTest(StatisticsTest("testStatistics"))
-    ApiTestSuite.addTest(TestApiServer("testGetCf"))
+    ApiTestSuite.addTest(TestApiServer("testParamTypeCheck"))
 #    ApiTestSuite.addTest(ApiServerTest("testIsTimeToWorkFirst"))
 #    ApiTestSuite.addTest(ApiServerTest("testInfoPush"))
         
