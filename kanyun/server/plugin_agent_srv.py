@@ -7,7 +7,7 @@
 import time
 import json
 import traceback
-import pycassa
+from kanyun.database.cassadb import CassaDb
 
 """
 db struce:
@@ -53,7 +53,7 @@ example:
 # data format: {key: ColumnFamily Object}
 # example: {'cpu', ColumnFamily()}
 """
-cfs = dict()
+#cfs = dict()
 
 """
 # previous data in memory
@@ -99,29 +99,29 @@ def get_cf_str(cf_str):
     else:
         return (cf_str, None)
 
-def get_cf(db, cf_str):
-    """cf_str is get_cf_str(str)
-    return cf/None"""
-    cf = None
-    if cfs.has_key(cf_str):
-        cf = cfs[cf_str]
-    else:
-        print 'create cf connection:', cf_str
-        try:
-            cfs[cf_str] = pycassa.ColumnFamily(db, cf_str)
-            cf = cfs[cf_str]
-        except pycassa.cassandra.c10.ttypes.NotFoundException:
-            print cf_str, "NotFound"
-        
-    return cf
+#def get_cf(db, cf_str):
+#    """cf_str is get_cf_str(str)
+#    return cf/None"""
+#    cf = None
+#    if cfs.has_key(cf_str):
+#        cf = cfs[cf_str]
+#    else:
+#        print 'create cf connection:', cf_str
+#        try:
+#            cfs[cf_str] = pycassa.ColumnFamily(db, cf_str)
+#            cf = cfs[cf_str]
+#        except pycassa.cassandra.c10.ttypes.NotFoundException:
+#            print cf_str, "NotFound"
+#        
+#    return cf
 
 def parse_single(db, raw_cf_str, instance_id, value, keypath, scf_str):
     """value=[1332465360.033008, 9043400000000]"""
     cf_str, _ = get_cf_str(raw_cf_str)
-    cf = get_cf(db, cf_str)
-    if cf is None:
-        print "Unsupport cf type:", cf_str
-        return
+#    cf = get_cf(db, cf_str)
+#    if cf is None:
+#        print "Unsupport cf type:", cf_str
+#        return
     # get change
     prekey = keypath + '/' + cf_str + '/' + scf_str
     if cf_str in ['cpu']:
@@ -130,21 +130,22 @@ def parse_single(db, raw_cf_str, instance_id, value, keypath, scf_str):
         val1 = get_change(prekey, value)
     
     previous_data[prekey + '/1'] = (value[1], val1, instance_id, cf_str, scf_str)
-    cf.insert(instance_id, {scf_str: {int(value[0]): str(val1)}})
+#    cf.insert(instance_id, {scf_str: {int(value[0]): str(val1)}})
+    db.insert(cf_str, instance_id, {scf_str: {int(value[0]): str(val1)}})
     print '\tbuf %s saved:key=%s, cf=%s' % (prekey + '/1', instance_id, cf_str)
 
 def parse_multi(db, raw_cf_str, instance_id, value, keypath, scf_str):
     """value=[1332465360.033008, 9043400000000]"""
-    cf2 = None
+#    cf2 = None
     cf_str1, cf_str2 = get_cf_str(raw_cf_str)
-    cf1 = get_cf(db, cf_str1)
-    if cf1 is None:
-        print "unsupport cf type:", cf_str1
-        return
-    cf2 = get_cf(db, cf_str2)
-    if cf2 is None:
-        print "unsupport cf type :", cf_str2
-        return
+#    cf1 = get_cf(db, cf_str1)
+#    if cf1 is None:
+#        print "unsupport cf type:", cf_str1
+#        return
+#    cf2 = get_cf(db, cf_str2)
+#    if cf2 is None:
+#        print "unsupport cf type :", cf_str2
+#        return
     # get change
     prekey1 = keypath + '/' + cf_str1 + '/' + scf_str
     prekey2 = keypath + '/' + cf_str2 + '/' + scf_str
@@ -156,8 +157,10 @@ def parse_multi(db, raw_cf_str, instance_id, value, keypath, scf_str):
         val2 = get_change(prekey2, value)
         previous_data[prekey1] = (value[1], val1, instance_id, cf_str1, scf_str)
         previous_data[prekey2] = (value[2], val2, instance_id, cf_str2, scf_str)
-        cf1.insert(instance_id, {scf_str: {int(value[0]): str(val1)}})
-        cf2.insert(instance_id, {scf_str: {int(value[0]): str(val2)}})
+#        cf1.insert(instance_id, {scf_str: {int(value[0]): str(val1)}})
+#        cf2.insert(instance_id, {scf_str: {int(value[0]): str(val2)}})
+        db.insert(cf_str1, instance_id, {scf_str: {int(value[0]): str(val1)}})
+        db.insert(cf_str2, instance_id, {scf_str: {int(value[0]): str(val2)}})
         print '\t%s saved\n\t%s saved' % (prekey1, prekey2)
         print '\tkey=%s, cf=%s/%s 2 records saved' % (instance_id, cf_str1, cf_str2)
 
@@ -192,7 +195,7 @@ def plugin_decoder_agent(db, data):
     for instance_id, data in data.iteritems():
         keypath = '/' # use for previous_data's key
         keypath += instance_id
-        print '***** instance=%s:%d ColumnFamilys *****' % (instance_id, len(cfs))
+#        print '***** instance=%s:%d ColumnFamilys *****' % (instance_id, len(cfs))
 
         for i in data:
             # i is ["cpu", "total", [1332465360.033008, 9043400000000]], 

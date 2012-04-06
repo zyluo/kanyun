@@ -14,7 +14,7 @@ import json
 import traceback
 import ConfigParser
 import zmq
-import pycassa
+from kanyun.database.cassadb import CassaDb
 
 
 """
@@ -106,59 +106,30 @@ class Statistics():
 
 
 """cassandra database object"""
-data_db = None
+db = None
 """
 # ColumnFamilys object collection
 # data format: {key: ColumnFamily Object}
 # example: {'cpu', ColumnFamily()}
 """
-cfs = dict()
 
-def init_api():
-    global data_db
-    config = ConfigParser.ConfigParser()
-    config.read("demux.conf")
-    server_cfg = dict(config.items('Demux'))
-    data_db = pycassa.ConnectionPool('data', server_list=[server_cfg['db_host']])
-
-    
-def get_cf(cf_str):
-    """[private]"""
-    global data_db
-    global cfs
-    
-    if data_db is None:
-        init_api()
-    if not cfs.has_key(cf_str):
-        print 'new connection:', cf_str
-        try:
-            cfs[cf_str] = pycassa.ColumnFamily(data_db, cf_str)
-        except pycassa.cassandra.c10.ttypes.NotFoundException:
-            return None
-    cf = cfs[cf_str]
-    return cf
-     
+#def init_api():
+#    global db
+#    config = ConfigParser.ConfigParser()
+#    config.read("demux.conf")
+#    server_cfg = dict(config.items('Demux'))
+#    db = CassaDb('data', server_cfg['db_host'])
     
 def api_getdata(row_id, cf_str, scf_str, time_from=0, time_to=0):
     """
     return: recordset, count, bool(count > limit?)
     """
-    cf = get_cf(cf_str)
-    if cf is None:
-        return None, 0, True
         
     if time_to == 0:
         time_to = time.time()
     
-#    print "cf.get(%s, super_column=%s, column_start=%d, column_finish=%d)" % \
-#        (row_id, scf_str, time_from, float(time_to))
-    try:
-        rs = cf.get(row_id, super_column=scf_str, column_start=time_from, column_finish=int(float(time_to)), column_count=20000)
-        count = len(rs)
-    except pycassa.cassandra.c10.ttypes.NotFoundException:
-        rs = None
-        count = 0
-    #print rs
+    rs = db.get(cf_str, row_id, super_column=scf_str, column_start=time_from, column_finish=int(float(time_to)), column_count=20000)
+    count = 0 if rs is None else len(rs)
     
     return rs, count, False if (count == 20000) else True
     
@@ -196,10 +167,6 @@ def analyize_data(rs, period, statistic):
 
 ############################# public API interface #############################
 def api_getInstancesList(cf_str):
-    cf = get_cf(cf_str)
-    if cf is None:
-        return None, 0, True
-        
     ret = list()
     limit = 20000
     time_to = time.time()
@@ -207,33 +174,16 @@ def api_getInstancesList(cf_str):
     
 #    print "cf.get(%s, super_column=%s, column_start=%d, column_finish=%d)" % \
 #        (row_id, scf_str, time_from, float(time_to))
-    try:
-        rs = cf.get_range()
+    rs = db.get_range(cf_str)
+    if not rs is None:
         for i in rs:
             ret.append(i[0])
-    except pycassa.cassandra.c10.ttypes.NotFoundException:
-        rs = None
     
     return ret
     
 def api_getbyInstanceID(row_id, cf_str):
-    cf = get_cf(cf_str)
-    if cf is None:
-        return None, 0, True
-        
-    limit = 20000
-    time_to = time.time()
-    time_from = time_to - 24 * 60 * 60
-    
-#    print "cf.get(%s, super_column=%s, column_start=%d, column_finish=%d)" % \
-#        (row_id, scf_str, time_from, float(time_to))
-    try:
-        rs = cf.get(row_id)
-        count = len(rs)
-    except pycassa.cassandra.c10.ttypes.NotFoundException:
-        rs = None
-        count = 0
-    print rs
+    rs = db.getbykey(cf_str, row_id)
+    count = 0 if rs is None else len(rs)
     
     return rs, count, False if (count == 20000) else True
     
@@ -243,45 +193,31 @@ def api_getbykey(row_id, cf_str, scf_str, limit=20000):
     example:cf=vmnetwork,scf=10.0.0.1,key=instance-0000002
     return: recordset, count, bool(count > limit?)
     """
-    cf = get_cf(cf_str)
-    if cf is None:
-        return None, 0, True
-        
-    time_to = time.time()
-    time_from = time_to - 24 * 60 * 60
-    
-#    print "cf.get(%s, super_column=%s, column_start=%d, column_finish=%d)" % \
-#        (row_id, scf_str, time_from, float(time_to))
-    try:
-        rs = cf.get(row_id, super_column=scf_str, column_count=limit)
-        count = len(rs)
-    except pycassa.cassandra.c10.ttypes.NotFoundException:
-        rs = None
-        count = 0
-    #print rs
+    db.getbykey2(cf_str, key=row_id, super_column=scf_str, column_count=limit)
+    count = 0 if rs is None else len(rs)
     
     return rs, count, False if (count == 20000) else True
 
-def api_get(row_id, cf_str, scf_str, time_to, time_from, limit=20000):
-    """
-    example:cf=vmnetwork,scf=10.0.0.1,key=instance-0000002
-    return: recordset, count, bool(count > limit?)
-    """
-    cf = get_cf(cf_str)
-    if cf is None or time_to is None or time_from is None:
-        return None, 0, True
-        
-#    print "cf.get(%s, super_column=%s, column_start=%d, column_finish=%d)" % \
-#        (row_id, scf_str, time_from, float(time_to))
-    try:
-        rs = cf.get(row_id, super_column=scf_str, column_start=int(time_from), column_finish=int(float(time_to)), column_count=limit)
-        count = len(rs)
-    except pycassa.cassandra.c10.ttypes.NotFoundException:
-        rs = None
-        count = 0
-    #print rs
-    
-    return rs, count, False if (count == 20000) else True
+#def api_get(row_id, cf_str, scf_str, time_to, time_from, limit=20000):
+#    """
+#    example:cf=vmnetwork,scf=10.0.0.1,key=instance-0000002
+#    return: recordset, count, bool(count > limit?)
+#    """
+#    cf = get_cf(cf_str)
+#    if cf is None or time_to is None or time_from is None:
+#        return None, 0, True
+#        
+##    print "cf.get(%s, super_column=%s, column_start=%d, column_finish=%d)" % \
+##        (row_id, scf_str, time_from, float(time_to))
+#    try:
+#        rs = cf.get(row_id, super_column=scf_str, column_start=int(time_from), column_finish=int(float(time_to)), column_count=limit)
+#        count = len(rs)
+#    except pycassa.cassandra.c10.ttypes.NotFoundException:
+#        rs = None
+#        count = 0
+#    #print rs
+#    
+#    return rs, count, False if (count == 20000) else True
     
     
 def api_statistic(row_id, cf_str, scf_str, statistic, period=5, time_from=0, time_to=0):
@@ -310,7 +246,7 @@ if __name__ == '__main__':
 
     context = zmq.Context()
     
-    data_db = pycassa.ConnectionPool('data', server_list=[server_cfg['db_host']])
+#    data_db = pycassa.ConnectionPool('data', server_list=[server_cfg['db_host']])
 
     # Socket to receive messages on
     api_server = context.socket(zmq.REP)
@@ -318,7 +254,8 @@ if __name__ == '__main__':
     print "listen tcp://%(api_host)s:%(api_port)s" % server_cfg
 
     # data DB
-    data_db = pycassa.ConnectionPool('data', server_list=[server_cfg['db_host']])
+    db = CassaDb('data', server_cfg['db_host'])
+#    data_db = pycassa.ConnectionPool('data', server_list=[server_cfg['db_host']])
 
     while True:
         message = api_server.recv()
