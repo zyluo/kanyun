@@ -1,11 +1,13 @@
 #!/usr/bin/env python
+# encoding: utf-8
+# TAB char: space
 
 import time
 import unittest
 
 import mox
 
-import plugin_agent as worker
+import kanyun.worker.plugin_agent as worker
 
 """A worker plugin run in nova-compute node
 """

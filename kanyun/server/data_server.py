@@ -95,18 +95,15 @@ def plugin_decoder_agent(db, data):
     print '-' * 60
     
 def plugin_decoder_traffic_accounting(db, data):
-    # verify the data
     # protocol:{'instance-00000001': ('10.0.0.2', 1332409327, '0')}
+    # verify the data
     if len(data) <= 0:
         print 'invalid data:', data
         return
     
-#    cf = pycassa.ColumnFamily(db, 'vmnetwork')
     print 'save:', data
     for i in data:
         if len(i) > 0 and len(data[i]) > 2:
-            # cf.insert('instance-00000001', {'10.0.0.2': {1332409327: '0'}})
-#            cf.insert(i, {data[i][0]: {data[i][1]: data[i][2]}})
             db.insert('vmnetwork', i, {data[i][0]: {data[i][1]: data[i][2]}})
 
 

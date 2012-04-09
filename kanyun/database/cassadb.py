@@ -7,14 +7,8 @@
 
 import pycassa
 
-def a():
-    pass
-
-def tmp():
-    pass
-
 class CassaDb():
-    def __init__(self, keyspace, ip):
+    def __init__(self, keyspace = 'data', ip = '127.0.0.1'):
         """
         # self.cfs:
         # ColumnFamilys object collection

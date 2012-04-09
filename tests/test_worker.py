@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 # encoding: utf-8
 # TAB char: space
 #
@@ -12,12 +13,12 @@ import time
 import sys
 import json
 import mox
-import worker
-from worker import Worker
+from kanyun.worker.worker import Worker
+from kanyun.worker.worker import MSG_TYPE
 
 def PluginTrafficAccountingInfoMox():
     info  = {'instance-00000001': ('10.0.0.2', 1332409327, '0')}
-    return worker.MSG_TYPE.TRAFFIC_ACCOUNTING, info
+    return MSG_TYPE.TRAFFIC_ACCOUNTING, info
 
 def PluginAgentInfo():
     info = {'instance-000000ba@sws-yz-5': 
@@ -27,7 +28,7 @@ def PluginAgentInfo():
         ('blk', 'vda', (1332400088.156346, 298522624L, 5908590592L)),  
         ('blk', 'vdb', (1332400088.158202, 2159616L, 1481297920L))]}
 
-    return worker.MSG_TYPE.AGENT, info
+    return MSG_TYPE.AGENT, info
 
 
 class ZmqPollerMox():
@@ -59,7 +60,7 @@ class WorkerTest(unittest.TestCase):
         self.mox.UnsetStubs()
         
     def testPlugin(self):
-        w = worker.Worker()
+        w = Worker()
         w.register_plugin(PluginTrafficAccountingInfoMox)
         w.register_plugin(PluginAgentInfo)
         assert len(w.plugins) == 2
@@ -69,7 +70,7 @@ class WorkerTest(unittest.TestCase):
             
     def testIsTimeToWorkFirst(self):
         # test the first run
-        w = worker.Worker()
+        w = Worker()
         self.mox.ReplayAll()
         
         # first and not in worktime
@@ -114,30 +115,6 @@ class WorkerTest(unittest.TestCase):
         self.mox.VerifyAll()
         print "info_push test \t[\033[1;33mOK\033[0m]"
       
-#    def testWorkerClass(self):
-#        m = self.mox
-#        m.StubOutWithMock(zmq, 'Poller')
-#        m.StubOutWithMock(zmq, 'Context')
-##        zmq.Context().AndReturn(ZmqContextMox())
-#        #zmq.Poller().AndReturn(ZmqPollerMox())
-##        self.mox.StubOutWithMock(worker, 'plugin_traffic_accounting_info')
-##        self.mox.StubOutWithMock(worker, 'plugin_agent_info')
-#        worker.plugin_traffic_accounting_info().AndReturn(PluginTrafficAccountingInfoMox())
-#        worker.plugin_agent_info().AndReturn(PluginAgentInfo())
-#        
-##        t = time.gmtime(time.mktime((2012, 10, 1, 15, 26,0,0,0,0)))
-##        m.StubOutWithMock(time, 'localtime')
-#        # Record a call to 'now', and have it return the value '1234'
-##        time.localtime().AndReturn(t)
-#        self.mox.ReplayAll()
-##        worker.main(False)
-#        w = Worker(context = ZmqContextMox())
-#        msg = [1, json.dumps(["1", {86:2012}])]
-#        w.send(msg)
-#        assert w.feedback.count == len(msg)
-#        self.mox.VerifyAll()
-#        
-    
 class WorkerIntegrationTest():
 #class WorkerIntegrationTest(unittest.TestCase):
     def setUp(self):

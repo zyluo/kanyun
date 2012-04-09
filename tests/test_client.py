@@ -30,7 +30,6 @@ if __name__ == '__main__':
         print "key=", i, ":", 
         r = client.getbykey(i, cf_str = client.cf_str)
         print r
-#        if not r is None: print len(r)
         for i1 in r:
             client.key = i
             client.scf_str = u'10.0.0.2'

@@ -23,8 +23,6 @@ def show_result3(rs, row_id):
     for r in rs:
         for k, i in r.iteritems():
             print "%s %d results" % (k, len(i))
-#            timestr = time.strftime("%m-%d %H:%M:%S", time.localtime(float(k)))
-#            print "%s %s" % (timestr, i)
             print i
     print "%d results of key=%s" % (len(rs), row_id)
 
@@ -52,8 +50,6 @@ def main():
         
     context = zmq.Context()
 
-    #  Socket to talk to server
-#    print "Connecting to hello world server..."
     api_socket = context.socket(zmq.REQ)
     api_socket.connect("tcp://%(api_host)s:%(api_port)s" % cfg)
     

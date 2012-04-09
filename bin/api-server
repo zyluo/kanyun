@@ -24,16 +24,9 @@ if __name__ == '__main__':
 
     context = zmq.Context()
     
-#    data_db = pycassa.ConnectionPool('data', server_list=[api_cfg['db_host']])
-
-    # Socket to receive messages on
     api_socket = context.socket(zmq.REP)
     api_socket.bind("tcp://%(api_host)s:%(api_port)s" % api_cfg)
     print "listen tcp://%(api_host)s:%(api_port)s" % api_cfg
-
-    # data DB
-#    db = CassaDb('data', api_cfg['db_host'])
-#    data_db = pycassa.ConnectionPool('data', server_list=[api_cfg['db_host']])
 
     while True:
         message = api_socket.recv()

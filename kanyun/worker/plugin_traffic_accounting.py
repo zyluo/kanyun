@@ -24,23 +24,25 @@ db:
 +==========================================================+
 """
 
-CMD = "sudo iptables -t raw -nvxL PREROUTING"
-CMD_HOST = "uname -a"
-buf = subprocess.check_output(shlex.split(CMD_HOST), stderr=subprocess.STDOUT)
-buf = buf.split()
-if len(buf) > 1:
-    hostname = '@' + buf[1]
-else:
-    hostname = ''
+def get_hostname():
+    CMD_HOST = "uname -a"
+    buf = subprocess.check_output(shlex.split(CMD_HOST), stderr=subprocess.STDOUT)
+    buf = buf.split()
+    if len(buf) > 1:
+        ret = '@' + buf[1]
+    else:
+        ret = ''
+    return ret
     
 _ip_bytes = {} # {'10.0.0.2': '10', '10.0.0.3': '5'}
+CMD = "sudo iptables -t raw -nvxL PREROUTING"
+hostname = get_hostname()
 
 def get_traffic_accounting_info():
     """
     return value format example:
     {'instance-00000001': ('10.0.0.2', 1332409327, '0')}
     """
-    
     
     records = subprocess.check_output(shlex.split(CMD), stderr=subprocess.STDOUT)
     lines = records.splitlines()[2:]

@@ -82,7 +82,6 @@ class Statistics():
         elif which == STATISTIC.SAMPLES:
             return self.get_samples()
         else:
-            # error
             print 'error:', which
             return 0
             
@@ -241,10 +240,8 @@ def api_statistic(row_id, cf_str, scf_str, statistic, period=5, time_from=0, tim
         return None, 0, True
         
     ret_len = 0
-#    print row_id, cf_str, scf_str, time_from, time_to
     rs, count, all_data = api_getdata(row_id, cf_str, scf_str, time_from, time_to)
     if not rs is None and count > 0:
-#        print "getdata:", rs
         buf = analyize_data(rs, 1, statistic)
         ret = analyize_data(buf, period, statistic)
         ret_len = 0 if ret is None else len(ret)

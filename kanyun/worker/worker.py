@@ -24,7 +24,6 @@ protocol:
 """
 WORKER_ID = "black"
 
-
 # plugin
 def plugin_heartbeat(status = 1):
     """status: 0:I will exit; 1:working"""
@@ -130,7 +129,6 @@ class Worker:
             msg_type, info = plugin()
             if (not info is None) and len(info) > 0:
                 self.send([msg_type, json.dumps(info)])
-            #self.send(info)
         
         self.update_time()
         return True
