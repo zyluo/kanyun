@@ -11,6 +11,23 @@ from kanyun.server import api_client
 # Author: Peng Yuwei<yuwei5@staff.sina.com.cn> 2012-3-27
 # Last update: Peng Yuwei<yuwei5@staff.sina.com.cn> 2012-4-5
 
+def show_result(rs, cf_str):
+    for i in rs:
+        print "%s" % (i)
+    print "%d results of cf=%s" % (len(rs), cf_str)
+def show_result2(rs, row_id, cf_str, scf_str):
+    for k, i in rs.iteritems():
+        print "{%s:%s}" % (k, i)
+    print "%d results of key=%s,cf=%s,scf=%s" % (len(rs), row_id, cf_str, scf_str)
+def show_result3(rs, row_id):
+    for r in rs:
+        for k, i in r.iteritems():
+            print "%s %d results" % (k, len(i))
+#            timestr = time.strftime("%m-%d %H:%M:%S", time.localtime(float(k)))
+#            print "%s %s" % (timestr, i)
+            print i
+    print "%d results of key=%s" % (len(rs), row_id)
+
 def main():
     if len(sys.argv) == 2:
         if sys.argv[1] in ['--help', "-h", "?"]:
@@ -41,34 +58,57 @@ def main():
     api_socket.connect("tcp://%(api_host)s:%(api_port)s" % cfg)
     
     if len(sys.argv) == 4:
-        api_client.invoke_getbykey2(api_socket, sys.argv[1], sys.argv[2], sys.argv[3])
+        row_id, cf_str, scf_str = sys.argv[1], sys.argv[2], sys.argv[3]
+        rs = api_client.invoke_getbykey2(api_socket, row_id, cf_str, scf_str)
+        show_result2(rs, row_id, cf_str, scf_str)
         return
     elif len(sys.argv) == 2:
-        api_client.invoke_getInstacesList(api_socket, sys.argv[1])
+        cf_str = sys.argv[1]
+        rs = api_client.invoke_getInstacesList(api_socket, cf_str)
+        show_result(rs, cf_str)
     elif len(sys.argv) == 3 and sys.argv[1] == '-k':
-        api_client.invoke_getbykey(api_socket, sys.argv[2])
+        row_id = sys.argv[2]
+        rs = api_client.invoke_getbykey(api_socket, row_id)
+        show_result3(rs, row_id)
         return
     elif len(sys.argv) == 3:
         if sys.argv[2] == 'nic' or sys.argv[2] == 'blk':
-            api_client.invoke_getbykey2(api_socket, sys.argv[1], sys.argv[2], sys.argv[2] + '_incoming')
-            api_client.invoke_getbykey2(api_socket, sys.argv[1], sys.argv[2], sys.argv[2] + '_outgoing')
+            row_id, cf_str, scf_str = sys.argv[1], sys.argv[2], sys.argv[2] + '_incoming'
+            rs = api_client.invoke_getbykey2(api_socket, row_id, cf_str, scf_str)
+            show_result2(rs, row_id, cf_str, scf_str)
+            
+            row_id, cf_str, scf_str = sys.argv[1], sys.argv[2], sys.argv[2] + '_outgoing'
+            rs = api_client.invoke_getbykey2(api_socket, row_id, cf_str, scf_str)
+            show_result2(rs, row_id, cf_str, scf_str)
             return
         elif sys.argv[2] == 'blk':
-            api_client.invoke_getbykey2(api_socket, sys.argv[1], sys.argv[2], sys.argv[2] + '_read')
-            api_client.invoke_getbykey2(api_socket, sys.argv[1], sys.argv[2], sys.argv[2] + '_write')
+            row_id, cf_str, scf_str = sys.argv[1], sys.argv[2], sys.argv[2] + '_read'
+            rs = api_client.invoke_getbykey2(api_socket, row_id, cf_str, scf_str)
+            show_result2(rs, row_id, cf_str, scf_str)
+            
+            row_id, cf_str, scf_str = sys.argv[1], sys.argv[2], sys.argv[2] + '_write'
+            rs = api_client.invoke_getbykey2(api_socket, row_id, cf_str, scf_str)
+            show_result2(rs, row_id, cf_str, scf_str)
             return
         elif sys.argv[2] == 'mem':
-            api_client.invoke_getbykey2(api_socket, sys.argv[1], sys.argv[2], sys.argv[2] + '_free')
-            api_client.invoke_getbykey2(api_socket, sys.argv[1], sys.argv[2], sys.argv[2] + '_max')
+            row_id, cf_str, scf_str = sys.argv[1], sys.argv[2], sys.argv[2] + '_free'
+            rs = api_client.invoke_getbykey2(api_socket, row_id, cf_str, scf_str)
+            show_result2(rs, row_id, cf_str, scf_str)
+            
+            row_id, cf_str, scf_str = sys.argv[1], sys.argv[2], sys.argv[2] + '_max'
+            rs = api_client.invoke_getbykey2(api_socket, row_id, cf_str, scf_str)
+            show_result2(rs, row_id, cf_str, scf_str)
             return
         else:
-            api_client.invoke_getbykey2(api_socket, sys.argv[1], sys.argv[2], 'total')
+            row_id, cf_str, scf_str = sys.argv[1], sys.argv[2], 'total'
+            rs = api_client.invoke_getbykey2(api_socket, row_id, cf_str, scf_str)
+            show_result2(rs, row_id, cf_str, scf_str)
         return
     elif len(sys.argv) == 8:
-        api_client.invoke_statistics(api_socket, sys.argv[1], sys.argv[2], sys.argv[3],sys.argv[4], sys.argv[5], sys.argv[6], sys.argv[7])
+        rs = api_client.invoke_statistics(api_socket, sys.argv[1], sys.argv[2], sys.argv[3],sys.argv[4], sys.argv[5], sys.argv[6], sys.argv[7])
         return
     elif len(sys.argv) == 7:
-        api_client.invoke_statistics(api_socket, sys.argv[1], sys.argv[2], sys.argv[3],sys.argv[4], sys.argv[5], sys.argv[6], '0')
+        rs = api_client.invoke_statistics(api_socket, sys.argv[1], sys.argv[2], sys.argv[3],sys.argv[4], sys.argv[5], sys.argv[6], '0')
         return
 
     

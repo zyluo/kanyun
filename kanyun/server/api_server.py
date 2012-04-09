@@ -125,9 +125,9 @@ def api_getdata(row_id, cf_str, scf_str, time_from=0, time_to=0):
     """
     return: recordset, count, bool(count > limit?)
     """
-    if not type(row_id) is types.StringType \
-        or not type(cf_str) is types.StringType \
-        or not type(scf_str) is types.StringType \
+    if not type(row_id) is types.UnicodeType \
+        or not type(cf_str) is types.UnicodeType \
+        or not type(scf_str) is types.UnicodeType \
         or not type(time_from) is types.IntType \
         or not type(time_to) is types.IntType:
         return None, 0, True
@@ -181,7 +181,8 @@ def analyize_data(rs, period, statistic):
 
 ############################# public API interface #############################
 def api_getInstancesList(cf_str):
-    if not type(cf_str) is types.StringType:
+    if not type(cf_str) is types.UnicodeType:
+        print 'param types error'
         return None
     ret = list()
     limit = 20000
@@ -197,8 +198,9 @@ def api_getInstancesList(cf_str):
     return ret
     
 def api_getbyInstanceID(row_id, cf_str):
-    if not type(row_id) is types.StringType \
-        or not type(cf_str) is types.StringType:
+    if not type(row_id) is types.UnicodeType \
+        or not type(cf_str) is types.UnicodeType:
+        print 'param types error'
         return None, 0, True
     db = get_db()
     rs = db.getbykey(cf_str, row_id)
@@ -212,10 +214,11 @@ def api_getbykey(row_id, cf_str, scf_str, limit=20000):
     example:cf=vmnetwork,scf=10.0.0.1,key=instance-0000002
     return: recordset, count, bool(count > limit?)
     """
-    if not type(row_id) is types.StringType \
-        or not type(cf_str) is types.StringType \
-        or not type(scf_str) is types.StringType \
+    if not type(row_id) is types.UnicodeType \
+        or not type(cf_str) is types.UnicodeType \
+        or not type(scf_str) is types.UnicodeType \
         or not type(limit) is types.IntType:
+        print 'param types error'
         return None, 0, True
     db = get_db()
     rs = db.getbykey2(cf_str, key=row_id, super_column=scf_str, column_count=limit)
@@ -227,13 +230,14 @@ def api_statistic(row_id, cf_str, scf_str, statistic, period=5, time_from=0, tim
     """statistic is STATISTIC enum
     period default=5 minutes
     time_to default=0(now)"""
-    if not type(row_id) is types.StringType \
-        or not type(cf_str) is types.StringType \
-        or not type(scf_str) is types.StringType \
+    if not type(row_id) is types.UnicodeType \
+        or not type(cf_str) is types.UnicodeType \
+        or not type(scf_str) is types.UnicodeType \
         or not type(statistic) is types.IntType \
         or not type(period) is types.IntType \
         or not type(time_from) is types.IntType \
         or not type(time_to) is types.IntType:
+        print 'param types error'
         return None, 0, True
         
     ret_len = 0

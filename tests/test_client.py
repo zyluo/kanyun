@@ -11,9 +11,16 @@ from kanyun.server.api_client import ApiClient
 
 
 if __name__ == '__main__':
+    time.clock()
+#    ApiTestSuite = unittest.TestSuite()
+#    ApiTestSuite.addTest(StatisticsTest("testStatistics"))
+#            
+#    runner = unittest.TextTestRunner()
+#    runner.run(ApiTestSuite)
+    
     client = ApiClient()
     client.period = 1
-    client.cf_str = "vmnetwork"
+    client.cf_str = "cpu"
     client.scf_str = "total"
     client.time_from = time.time() - 30*24*60*60
     rs = client.getlist(client.cf_str)

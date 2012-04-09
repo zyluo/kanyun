@@ -37,7 +37,7 @@ class StatisticsTest(unittest.TestCase):
             assert s.get_max() == i
             assert s.get_min() == 1
             assert s.get_agerage() == isum / i
-        print "Statistics test \t[\033[1;33mOK\033[0m]"
+        print "Statistics test \t\t\t[\033[1;33mOK\033[0m]"
 
 def InitApiMox():
     pass
@@ -93,7 +93,7 @@ class TestApiServer(unittest.TestCase):
         assert(rs5 is None)
         assert(rs6 is None)
         
-        print "Param type test \t[\033[1;33mOK\033[0m]"
+        print "Param type test \t\t\t[\033[1;33mOK\033[0m]"
     
     def testApiGetdata(self):
         time.clock()
@@ -107,7 +107,7 @@ class TestApiServer(unittest.TestCase):
         rs, count, _ = api_server.api_getdata(row_id, cf_str, scf_str, time_from=time_from, time_to=time_to)
 #        print rs
         print "%d results, spend %f seconds" % (count, time.clock())
-        print "ApiGetdata test \t[\033[1;33mOK\033[0m]"
+        print "ApiGetdata test \t\t\t[\033[1;33mOK\033[0m]"
         print '-' * 60
     
     def testApiStatisticSUM(self):
@@ -130,11 +130,11 @@ class TestApiServer(unittest.TestCase):
                 statistic, period, \
                 time_from, time_to)
         self.assertEqual(count, 1)
-#        self.assertEqual(rs[0], 44)
+        self.assertEqual(rs.values()[0], 44)
         self.mox.VerifyAll()
         
         print "%d SUM results, spend %f seconds" % (count, time.clock())
-        print "api_statistics sum test \t[\033[1;33mOK\033[0m]"
+        print "api_statistics sum test \t\t\t[\033[1;33mOK\033[0m]"
         print '-' * 60
 
     def testApiStatisticMAX(self):
@@ -157,10 +157,10 @@ class TestApiServer(unittest.TestCase):
                 statistic, period, \
                 time_from, time_to)
         self.assertEqual(count, 1)
-#        self.assertEqual(rs[0], 20)
+        self.assertEqual(rs.values()[0], 20)
         self.mox.VerifyAll()
         print "%d MAX results, spend %f seconds" % (count, time.clock())
-        print "api_statistics max test \t[\033[1;33mOK\033[0m]"
+        print "api_statistics max test \t\t\t[\033[1;33mOK\033[0m]"
         print '-' * 60
         
         
@@ -184,11 +184,11 @@ class TestApiServer(unittest.TestCase):
                 statistic, period, \
                 time_from, time_to)
         self.assertEqual(count, 1)
-#        self.assertEqual(rs.iteritems[0], 1)
+        self.assertEqual(rs.values()[0], 1)
         self.mox.VerifyAll()
         
         print "%d MIN results, spend %f seconds" % (count, time.clock())
-        print "api_statistics min test \t[\033[1;33mOK\033[0m]"
+        print "api_statistics min test \t\t\t[\033[1;33mOK\033[0m]"
         print '-' * 60
     
     def testApiStatisticAVG(self):
@@ -214,7 +214,7 @@ class TestApiServer(unittest.TestCase):
         self.mox.VerifyAll()
         
         print "%d AVERAGE results, spend %f seconds" % (count, time.clock())
-        print "api_statistics AVERAGE test \t[\033[1;33mOK\033[0m]"
+        print "api_statistics AVERAGE test \t\t\t[\033[1;33mOK\033[0m]"
         print '-' * 60
 
 #    def testApiStatistic(self):
@@ -249,7 +249,7 @@ class TestApiServer(unittest.TestCase):
 #        
 #        self.mox.VerifyAll()
 #        
-#        print "api_statistics test \t[\033[1;33mOK\033[0m]"
+#        print "api_statistics test \t\t\t[\033[1;33mOK\033[0m]"
 #        
 #    def test_demo(self):
 #        self.assertTrue(True)
