@@ -18,7 +18,7 @@ example:
 [u'S', u'instance-00000001@pyw.novalocal', u'cpu', u'total', 0, 5, 1332897600, 0]
 """
 
-param_tmpl = ['S', 'instance-00000001@pyw.novalocal', 'cpu', 'total', 0, 5, 1332897600, 0]
+param_tmpl = ['S', u'instance-00000001@pyw.novalocal', u'cpu', u'total', 0, 5, 1332897600, 0]
 
 def invoke(socket, param):
 #    print "Sending request ", param
@@ -53,11 +53,11 @@ def invoke_getInstacesList(socket, cf_str):
 def invoke_getbykey(socket, row_id):
     ret = list()
     cmd = list()
-    cmd.append([u'K', row_id, "vmnetwork"])
-    cmd.append([u'K', row_id, "mem"])
-    cmd.append([u'K', row_id, "nic"])
-    cmd.append([u'K', row_id, "blk"])
-    cmd.append([u'G', row_id, "cpu", "total"])
+    cmd.append([u'K', row_id, u"vmnetwork"])
+    cmd.append([u'K', row_id, u"mem"])
+    cmd.append([u'K', row_id, u"nic"])
+    cmd.append([u'K', row_id, u"blk"])
+    cmd.append([u'G', row_id, u"cpu", u"total"])
     
     for i in cmd:
         cf_str = i[2]
@@ -109,13 +109,13 @@ def invoke_statistics(api_client, row_id, cf_str, scf_str, statistic, period=5, 
 class ApiClient():
     def __init__(self, api_host = '127.0.0.1', api_port = '5556'):
         # default value
-        self.cf_str = ''
-        self.scf_str = ''
+        self.cf_str = u''
+        self.scf_str = u''
         self.statistic = 0
         self.period = 5
         self.time_from = 0
         self.time_to = 0
-        self.key = ''
+        self.key = u''
         
         self.context = zmq.Context()
         self.socket = self.context.socket(zmq.REQ)

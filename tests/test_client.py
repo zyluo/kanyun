@@ -20,8 +20,8 @@ if __name__ == '__main__':
     
     client = ApiClient()
     client.period = 1
-    client.cf_str = "cpu"
-    client.scf_str = "total"
+    client.cf_str = u"cpu"
+    client.scf_str = u"total"
     client.time_from = time.time() - 30*24*60*60
     rs = client.getlist(client.cf_str)
     print rs
@@ -33,7 +33,7 @@ if __name__ == '__main__':
 #        if not r is None: print len(r)
         for i1 in r:
             client.key = i
-            client.scf_str = '10.0.0.2'
+            client.scf_str = u'10.0.0.2'
             client.time_to = time.time()
             print "sum = ", client.get_sum()
             print "max = ", client.get_max()
