@@ -156,10 +156,12 @@ def analyize_data(rs, period, statistic):
         key = rt.tm_min + rt.tm_hour*100 + rt.tm_mday*10000 + rt.tm_mon*1000000 + rt.tm_year*100000000
         if t == 0:
             print '\tget first value'
+            st.clean()
             t = key
             key_time = time.gmtime(timestmp)
         if key >= t + period:
             print '\tnext'
+            st.clean()
             t = key
             key_time = time.gmtime(timestmp)
         st.update(float(value))
@@ -238,7 +240,7 @@ def api_statistic(row_id, cf_str, scf_str, statistic, period=5, time_from=0, tim
 #    print row_id, cf_str, scf_str, time_from, time_to
     rs, count, all_data = api_getdata(row_id, cf_str, scf_str, time_from, time_to)
     if not rs is None and count > 0:
-        print "getdata:", rs
+#        print "getdata:", rs
         buf = analyize_data(rs, 1, statistic)
         ret = analyize_data(buf, period, statistic)
         ret_len = 0 if ret is None else len(ret)
