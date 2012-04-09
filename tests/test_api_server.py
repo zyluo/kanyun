@@ -11,8 +11,11 @@ import sys
 import random
 import mox
 import pycassa
+from collections import OrderedDict
 
-from kanyun.server.api_server import *
+
+from kanyun.server import api_server
+#from kanyun.server.api_server import *
 
 class StatisticsTest(unittest.TestCase):
     def setUp(self):
@@ -22,7 +25,7 @@ class StatisticsTest(unittest.TestCase):
         self.mox.UnsetStubs()
         
     def testStatistics(self):
-        s = Statistics()
+        s = api_server.Statistics()
         isum = 0.0
         val = 1
         for i in range(1,11):
@@ -38,6 +41,12 @@ class StatisticsTest(unittest.TestCase):
 
 def InitApiMox():
     pass
+    
+def ApiGetDataMox():
+    ts = time.time()
+    rs = {ts-180:1, ts-120:2, ts-60:3, ts:5}
+    rs = OrderedDict(sorted(rs.items(), key=lambda t: t[0]))
+    return rs, len(rs), False
     
 class ColumnFamilyMox():
     def __init__(self, a='', b=''):
@@ -58,12 +67,12 @@ class TestApiServer(unittest.TestCase):
         scf_str = None
         period = None
         statistic = None
-        rs1, count, _ = api_statistic(None, None, None, None, period=5, time_from=0, time_to=0)
-        rs2, count, _ = api_getbykey(None, cf_str, scf_str, limit=20000)
-        rs3, count, _ = api_getbyInstanceID(row_id, cf_str)
-        rs4, count, _ = api_getdata(row_id, cf_str, scf_str, time_from=0, time_to=0)
-        rs5 = api_getInstancesList(None)
-        rs6 = analyize_data(None, period, statistic)
+        rs1, count, _ = api_server.api_statistic(None, None, None, None, period=5, time_from=0, time_to=0)
+        rs2, count, _ = api_server.api_getbykey(None, cf_str, scf_str, limit=20000)
+        rs3, count, _ = api_server.api_getbyInstanceID(row_id, cf_str)
+        rs4, count, _ = api_server.api_getdata(row_id, cf_str, scf_str, time_from=0, time_to=0)
+        rs5 = api_server.api_getInstancesList(None)
+        rs6 = api_server.analyize_data(None, period, statistic)
         assert(rs1 is None)
         assert(rs2 is None)
         assert(rs3 is None)
@@ -71,8 +80,9 @@ class TestApiServer(unittest.TestCase):
         assert(rs5 is None)
         assert(rs6 is None)
         
-#    
-    def test_api_1(self):
+        print "Param type test \t[\033[1;33mOK\033[0m]"
+    
+    def testApiGetdata(self):
         time.clock()
         row_id = 'instance-00000001@pyw.novalocal'
         statistic = api_server.STATISTIC.AVERAGE
@@ -81,51 +91,111 @@ class TestApiServer(unittest.TestCase):
         time_to = 0
         scf_str = 'total'
         cf_str = 'cpu'
-        rs, count, _ = api_server.api_getdata(row_id, cf_str, scf_str, statistic, period=period, time_from=time_from, time_to=time_to)
+        rs, count, _ = api_server.api_getdata(row_id, cf_str, scf_str, time_from=time_from, time_to=time_to)
+#        print rs
         print "%d results, spend %f seconds" % (count, time.clock())
+        print "ApiGetdata test \t[\033[1;33mOK\033[0m]"
         print '-' * 60
     
-    def test_api_statistic(self):
+    def testApiStatisticSUM(self):
         time.clock()
         row_id = 'instance-00000001@pyw.novalocal'
         period = 5
         time_from = 1332833464
         time_to = 0
-        scf_str = 'total'
         cf_str = 'cpu'
-        
+        scf_str = 'total'
         statistic = api_server.STATISTIC.SUM
-        rs, count, _ = api_server.api_statistic(row_id, cf_str, scf_str, statistic, period=period, time_from=time_from, time_to=time_to)
+        
+        m = self.mox
+        m.StubOutWithMock(api_server, 'api_getdata')
+        api_server.api_getdata(row_id, cf_str, scf_str, \
+                time_from, time_to).AndReturn(ApiGetDataMox())
+        self.mox.ReplayAll()
+        statistic = api_server.STATISTIC.SUM
+        rs, count, _ = api_server.api_statistic(row_id, cf_str, scf_str, \
+                statistic, period, \
+                time_from, time_to)
         print "%d SUM results, spend %f seconds" % (count, time.clock())
         print '-' * 60
+        self.mox.VerifyAll()
         
+        print "api_statistics sum test \t[\033[1;33mOK\033[0m]"
+
+    def testApiStatisticMAX(self):
+        time.clock()
+        row_id = 'instance-00000001@pyw.novalocal'
+        period = 5
+        time_from = 1332833464
+        time_to = 0
+        cf_str = 'cpu'
+        scf_str = 'total'
         statistic = api_server.STATISTIC.MAXIMUM
-        rs, count, _ = api_server.api_statistic(row_id, cf_str, scf_str, statistic, period=period, time_from=time_from, time_to=time_to)
-        print "%d MAXIMUM results, spend %f seconds" % (count, time.clock())
+        
+        m = self.mox
+        m.StubOutWithMock(api_server, 'api_getdata')
+        api_server.api_getdata(row_id, cf_str, scf_str, \
+                time_from, time_to).AndReturn(ApiGetDataMox())
+        self.mox.ReplayAll()
+        statistic = api_server.STATISTIC.SUM
+        rs, count, _ = api_server.api_statistic(row_id, cf_str, scf_str, \
+                statistic, period, \
+                time_from, time_to)
+        print "%d MAX results, spend %f seconds" % (count, time.clock())
         print '-' * 60
+        self.mox.VerifyAll()
+        
+        print "api_statistics max test \t[\033[1;33mOK\033[0m]"
+        
+    def testApiStatistic(self):
+        time.clock()
+        row_id = 'instance-00000001@pyw.novalocal'
+        period = 5
+        time_from = 1332833464
+        time_to = 0
+        cf_str = 'cpu'
+        scf_str = 'total'
+        statistic = api_server.STATISTIC.SUM
+        
+        m = self.mox
+        m.StubOutWithMock(api_server, 'api_getdata')
+        api_server.api_getdata(row_id, cf_str, scf_str, \
+                time_from, time_to).AndReturn(ApiGetDataMox())
+        self.mox.ReplayAll()
         
         statistic = api_server.STATISTIC.MINIMUM
-        rs, count, _ = api_server.api_statistic(row_id, cf_str, scf_str, statistic, period=period, time_from=time_from, time_to=time_to)
+        rs, count, _ = api_server.api_statistic(row_id, cf_str, scf_str, \
+                statistic, period=period, 
+                time_from=time_from, time_to=time_to)
         print "%d MINIMUM results, spend %f seconds" % (count, time.clock())
         print '-' * 60
         
         statistic = api_server.STATISTIC.AVERAGE
-        rs, count, _ = api_server.api_statistic(row_id, cf_str, scf_str, statistic, period=period, time_from=time_from, time_to=time_to)
+        rs, count, _ = api_server.api_statistic(row_id, cf_str, scf_str, \
+                statistic, period=period, 
+                time_from=time_from, time_to=time_to)
         print "%d AVERAGE results, spend %f seconds" % (count, time.clock())
         print '-' * 60
-    def test_demo(self):
-        self.assertTrue(True)
+        
+        self.mox.VerifyAll()
+        
+        print "api_statistics test \t[\033[1;33mOK\033[0m]"
+        
+#    def test_demo(self):
+#        self.assertTrue(True)
 
-    def test_demo2(self):
-        self.assertEqual(['vda', 'vdb'], ['vda', 'vdb'])
+#    def test_demo2(self):
+#        self.assertEqual(['vda', 'vdb'], ['vda', 'vdb'])
 
 if __name__ == '__main__':
     time.clock()
     ApiTestSuite = unittest.TestSuite()
     ApiTestSuite.addTest(StatisticsTest("testStatistics"))
     ApiTestSuite.addTest(TestApiServer("testParamTypeCheck"))
-#    ApiTestSuite.addTest(ApiServerTest("testIsTimeToWorkFirst"))
-#    ApiTestSuite.addTest(ApiServerTest("testInfoPush"))
+    ApiTestSuite.addTest(TestApiServer("testApiGetdata"))
+    ApiTestSuite.addTest(TestApiServer("testApiStatisticSUM"))
+    ApiTestSuite.addTest(TestApiServer("testApiStatisticMAX"))
+#    ApiTestSuite.addTest(TestApiServer("testApiStatistic"))
         
     runner = unittest.TextTestRunner()
     runner.run(ApiTestSuite)

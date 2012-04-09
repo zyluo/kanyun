@@ -15,6 +15,7 @@ import json
 import traceback
 import ConfigParser
 import zmq
+from collections import OrderedDict
 from kanyun.common.const import *
 from kanyun.database.cassadb import CassaDb
 
@@ -43,6 +44,8 @@ protocol:
 
 class Statistics():
     def __init__(self):
+        self.clean()
+    def clean(self):
         self.first = True
         self.count = 0
         self.sum = 0.0
@@ -50,6 +53,7 @@ class Statistics():
         self.max = 0.0
         self.previous = 0.0
         self.diff = 0.0
+        
     def update(self, value):
         self.count += 1
         self.sum += value
@@ -140,7 +144,7 @@ def api_getdata(row_id, cf_str, scf_str, time_from=0, time_to=0):
     
 def analyize_data(rs, period, statistic):
     """[private func]analyize the data"""
-    if rs is None or not type(period) is types.IntType or type(statistic) is types.IntType:
+    if rs is None or not type(period) is types.IntType or not type(statistic) is types.IntType:
         return None
     t = 0
     key_time = 0
@@ -161,12 +165,15 @@ def analyize_data(rs, period, statistic):
         st.update(float(value))
         key2 = time.mktime((key_time.tm_year, key_time.tm_mon, key_time.tm_mday, key_time.tm_hour, key_time.tm_min,0,0,0,0))
         this_period[key2] = st.get_value(statistic)
-        print '\tcompute time=:%d, value=%s(%f) "update(%s)=%d"' % \
+        print '\tcompute time=%d, value=%s(%f) "update(%s)=%d"' % \
                 (key, value, float(value), key2, this_period[key2])
             
+    this_period = OrderedDict(sorted(this_period.items(), key=lambda t: t[0]))
     print statistic, ":each period(", period, "):"
     for m, val in this_period.iteritems():
-        print '\t', m, val
+        rt = time.gmtime(m)
+        key = rt.tm_min + rt.tm_hour*100 + rt.tm_mday*10000 + rt.tm_mon*1000000 + rt.tm_year*100000000
+        print '\t', key, m, val
         
     return this_period
 
@@ -228,11 +235,13 @@ def api_statistic(row_id, cf_str, scf_str, statistic, period=5, time_from=0, tim
         return None, 0, True
         
     ret_len = 0
+#    print row_id, cf_str, scf_str, time_from, time_to
     rs, count, all_data = api_getdata(row_id, cf_str, scf_str, time_from, time_to)
     if not rs is None and count > 0:
+        print "getdata:", rs
         buf = analyize_data(rs, 1, statistic)
         ret = analyize_data(buf, period, statistic)
-        ret_len = len(ret)
+        ret_len = 0 if ret is None else len(ret)
         print ret_len, "result."
     else:
         print "no result."
