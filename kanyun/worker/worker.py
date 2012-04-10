@@ -15,6 +15,7 @@ import time
 import signal
 import zmq
 import logging
+import traceback
 import ConfigParser
 
 from kanyun.common.const import *
@@ -125,9 +126,12 @@ class Worker:
         self.logger.debug( '%02d:%02d:%02d working...' % (now[3], now[4], now[5]) )
 
         for plugin in self.plugins:
-            msg_type, info = plugin(self.worker_id)
-            if (not info is None) and len(info) > 0:
-                self.send([msg_type, json.dumps(info)])
+            try:
+                msg_type, info = plugin(self.worker_id)
+                if (not info is None) and len(info) > 0:
+                    self.send([msg_type, json.dumps(info)])
+            except:
+                traceback.print_exc()
         
         self.update_time()
         return True

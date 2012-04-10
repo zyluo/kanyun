@@ -119,7 +119,10 @@ if __name__ == '__main__':
                 report_str = ''.join(report)
                 print 'recv(%s):%s' % (msg_type, report_str)
                 data = json.loads(report_str)
-                plugins[msg_type](db, data)
+                try:
+                    plugins[msg_type](db, data)
+                except:
+                    traceback.print_exc()
             else:
                 print 'invaild data(%s):%s' % (msg_type, report_str)
             
