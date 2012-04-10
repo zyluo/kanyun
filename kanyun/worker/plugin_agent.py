@@ -43,14 +43,14 @@ protocol:
 ('blk', 'vdb', (1332400088.158202, 2159616L, 1481297920L))], 
 """
 
-
+# add by pyw
 class Diff():
     """TODO:same as class Statistics() in server, merge."""
     def __init__(self):
         self.first = True
         self.count = 0
-        self.previous = 0
-        self.diff = 0
+        self.previous = 0.0
+        self.diff = 0.0
         self.time_pass = time.time()
     def update(self, value):
         self.count += 1
@@ -76,7 +76,7 @@ class LibvirtMonitor(object):
     def __init__(self, uri='qemu:///system'):
         self.conn = libvirt.openReadOnly(uri)
         self.hostname = self.conn.getHostname()
-        self.diff = Diff()
+        self.diffs = dict()
         """
         (model, memory_kb, cpus, mhz, nodes,
          sockets, cores, threads) = conn.getInfo()
@@ -91,7 +91,7 @@ class LibvirtMonitor(object):
             # get infos
             infos = list()
             # get domain's cpu, memory info
-            infos.extend(self._collect_cpu_mem_info(dom_conn))
+            infos.extend(self._collect_cpu_mem_info(dom_id, dom_conn))
             # get domain's network info
             nic_devs = self.get_xml_nodes(dom_xml, './devices/interface')
             if not nic_devs:
@@ -133,7 +133,7 @@ class LibvirtMonitor(object):
 #        print 'xml_nodes', disks
         return disks
 
-    def _collect_cpu_mem_info(self, dom_conn):
+    def _collect_cpu_mem_info(self, dom_id, dom_conn):
         """Returns tuple of
            (total, utc_time_sec, dom_cpu_time, dom_max_mem_db, dom_memory_kb)
         """
@@ -144,9 +144,12 @@ class LibvirtMonitor(object):
             pass
         timestamp = self.get_utc_sec()
         
-        self.diff.update(dom_cpu_time)
+        if not self.diffs.has_key(dom_id):
+            self.diffs[dom_id] = Diff()
+        self.diffs[dom_id].update(dom_cpu_time)
         #%CPU = 100 * cpu_time_diff / (t * nr_cores * 10e9)
-        cpu = 100.0 * self.diff.get_diff() / (self.diff.get_time_pass() * 1 * 10e9)
+        cpu = 100.0 * self.diffs[dom_id].get_diff() / (self.diffs[dom_id].get_time_pass() * 1 * 10e9)
+        print dom_id, 'cpu usage:', cpu, '%, cpu_time:', dom_cpu_time
         # NOTE(lzyeval): libvirt currently can only see total of all vcpu time
 #        return [('cpu', 'total', (timestamp, dom_cpu_time)),
 #                ('mem', 'total', (timestamp, dom_max_mem_kb, dom_memory_kb))]

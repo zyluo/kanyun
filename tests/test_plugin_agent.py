@@ -94,11 +94,16 @@ SAMPLE_XML = """\
 </domain>\
 """
 
-def test_a():
-    return time.time()
-
 class TestLibvirtMonitor(unittest.TestCase):
+    def setUp(self):
+        self.mocker = mox.Mox()
+        self.a = worker.LibvirtMonitor()
 
+    def testCall(self):
+        info = worker.plugin_call()
+        print info
+        
+class TestLibvirtMonitorMox(unittest.TestCase):
     def setUp(self):
         self.mocker = mox.Mox()
         #self.a = self.mocker.CreateMock(worker.LibvirtMonitor)
@@ -121,4 +126,11 @@ class TestLibvirtMonitor(unittest.TestCase):
         self.assertEqual(devs, ['vda', 'vdb'])
 
 if __name__ == '__main__':
-    unittest.main()
+    time.clock()
+    AppTestSuite = unittest.TestSuite()
+    AppTestSuite.addTest(TestLibvirtMonitorMox("test_get_utc_sec"))
+    AppTestSuite.addTest(TestLibvirtMonitor("testCall"))
+
+    
+    runner = unittest.TextTestRunner()
+    runner.run(AppTestSuite)

@@ -70,7 +70,7 @@ class Worker:
         self.worker_id = worker_id
         if self.logger is None:
             self.logger = logging.getLogger()
-            handler = logging.FileHandler("/tmp/worker.log")
+            handler = logging.FileHandler("/tmp/kanyun-worker.log")
             self.logger.addHandler(handler)
             self.logger.setLevel(logging.NOTSET)
         if not (context is None):

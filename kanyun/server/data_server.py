@@ -12,6 +12,7 @@ import sys
 import time
 import signal
 import traceback
+import logging
 import ConfigParser
 import json
 import zmq
@@ -41,6 +42,11 @@ protocol:
     http://wiki.sinaapp.com/doku.php?id=monitoring
 """
 
+logger = logging.getLogger()
+handler = logging.FileHandler("/tmp/kanyun-server.log")
+logger.addHandler(handler)
+logger.setLevel(logging.NOTSET)
+            
 class LivingStatus():
     def __init__(self, worker_id = '1'):
         self.min = 2 # 2min
@@ -69,7 +75,7 @@ class LivingStatus():
     def alert_once(self):
         # TODO: dispose timeout worker here 
         print '*' * 400
-        print '[WARNING]worker', self.worker_id, "is dead. "
+        print '[WARNING]worker', self.worker_id, "is dead. email sendto admin"
         print '*' * 400
         self.alerted = True
     def alert(self):
@@ -108,21 +114,21 @@ def list_workers():
     
 def plugin_heartbeat(db, data):
     if data is None or len(data) < 3:
-        print "[ERR]invalid heartbeat data"
+        logger.debug("[ERR]invalid heartbeat data")
         return
     worker_id, update_time, status = data
     if living_status.has_key(worker_id):
         living_status[worker_id].update()
     else:
         living_status[worker_id] = LivingStatus(worker_id)
-    print "heartbeat:", data
+    logger.debug("heartbeat:%s" % data)
     if 0 == status:
-        print worker_id, "quited."
+        logger.debug("%s quited" % (worker_id))
         del living_status[worker_id]
 
 def plugin_decoder_agent(db, data):
     if data is None or len(data) <= 0:
-        print 'invalid data:', data
+        logger.debug('invalid data:%s' % (data))
         return
         
     pass_time = time.time()
@@ -134,10 +140,10 @@ def plugin_decoder_traffic_accounting(db, data):
     # protocol:{'instance-00000001': ('10.0.0.2', 1332409327, '0')}
     # verify the data
     if data is None or len(data) <= 0:
-        print 'invalid data:', data
+        logger.debug('invalid data:%s' % (data))
         return
     
-    print 'save:', data
+    logger.debug('save data:%s' % (data))
     for i in data:
         if len(i) > 0 and len(data[i]) > 2:
             db.insert('vmnetwork', i, {data[i][0]: {data[i][1]: data[i][2]}})
