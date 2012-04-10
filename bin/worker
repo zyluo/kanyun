@@ -21,11 +21,7 @@ from kanyun.common.const import *
 from kanyun.worker.worker import *
 from kanyun.database.cassadb import CassaDb
 
-WORKER_ID = 'black'
-
 def main(param):
-    global WORKER_ID
-    
     if len(sys.argv) == 2 and sys.argv[1] == '--help':
         print 'usage:\nuse speical id: worker <id>\nuse id in config file: worker'
         return
@@ -70,7 +66,7 @@ def main(param):
 #    feedback.connect("tcp://localhost:5559")
 
     print "Starting worker..."
-    print "id=%s, log=%s" % (WORKER_ID, cfg['log'])
+    print "id=%s, log=%s" % (worker.worker_id, cfg['log'])
     print "server is %s:%s" % (cfg['feedback_host'], cfg['feedback_port'])
 
     # Process messages from broadcast
@@ -88,14 +84,14 @@ def main(param):
             msg_type, msg_id, msg_body = broadcast.recv_multipart()
             # Process task
             message = json.loads(msg_body)
-            if message['dest'] in ['ALL', worker_id]:
+            if message['dest'] in ['ALL', WORKER_ID]:
                 logger.debug( message['cmd'], message['opt'] )
             # Send results to feedback
             worker.send([msg_type, msg_id,
-                                     json.dumps({'worker_id': worker_id,
+                                     json.dumps({'worker_id': WORKER_ID,
                                                  'status': 200})])
 #            feedback.send_multipart([msg_type, msg_id,
-#                                     json.dumps({'worker_id': worker_id,
+#                                     json.dumps({'worker_id': WORKER_ID,
 #                                                 'status': 200})])
     
         # push the info data to server

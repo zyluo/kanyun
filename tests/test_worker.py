@@ -16,11 +16,11 @@ import mox
 from kanyun.worker.worker import Worker
 from kanyun.worker.worker import MSG_TYPE
 
-def PluginTrafficAccountingInfoMox():
+def PluginTrafficAccountingInfoMox(worker_id):
     info  = {'instance-00000001': ('10.0.0.2', 1332409327, '0')}
     return MSG_TYPE.TRAFFIC_ACCOUNTING, info
 
-def PluginAgentInfo():
+def PluginAgentInfo(worker_id):
     info = {'instance-000000ba@sws-yz-5': 
         [('cpu', 'total', (1332400088.149444, 12132270000000L)), 
         ('mem', 'total', (1332400088.149444, 8388608L, 8388608L)), 
@@ -58,6 +58,11 @@ class WorkerTest(unittest.TestCase):
 
     def tearDown(self):
         self.mox.UnsetStubs()
+    
+    def testWorkerID(self):
+        w = Worker(worker_id = 'TestID')
+        assert(w.worker_id == 'TestID')
+        print "worker_id test \t[\033[1;33mOK\033[0m]"
         
     def testPlugin(self):
         w = Worker()
@@ -155,11 +160,12 @@ class WorkerIntegrationTest():
 if __name__ == '__main__':
     print 'Unit test of worker.'
     WorkerTestSuite = unittest.TestSuite()
+    WorkerTestSuite.addTest(WorkerTest("testWorkerID"))
     WorkerTestSuite.addTest(WorkerTest("testPlugin"))
     WorkerTestSuite.addTest(WorkerTest("testSend"))
     WorkerTestSuite.addTest(WorkerTest("testIsTimeToWorkFirst"))
     WorkerTestSuite.addTest(WorkerTest("testInfoPush"))
-        
+    
     runner = unittest.TextTestRunner()
     runner.run(WorkerTestSuite)
 

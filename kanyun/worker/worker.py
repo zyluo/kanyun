@@ -22,15 +22,14 @@ from kanyun.common.const import *
 protocol:
     http://wiki.sinaapp.com/doku.php?id=monitoring
 """
-WORKER_ID = "black"
 
 # plugin
-def plugin_heartbeat(status = 1):
+def plugin_heartbeat(worker_id, status = 1):
     """status: 0:I will exit; 1:working"""
-    info = [WORKER_ID, time.time(), status]
+    info = [worker_id, time.time(), status]
     return MSG_TYPE.HEART_BEAT, info
     
-def plugin_local_cpu():
+def plugin_local_cpu(worker_id):
     # FIXME:how to use import smart?
     """
     Data format:
@@ -43,14 +42,14 @@ def plugin_local_cpu():
     info = ret.stdout.readlines()
     return MSG_TYPE.LOCAL_INFO, [{"cpu": ''.join(info)}]
 
-def plugin_traffic_accounting_info():
+def plugin_traffic_accounting_info(worker_id):
     import plugin_traffic_accounting
     info = plugin_traffic_accounting.get_traffic_accounting_info()
     if len(info) <= 0:
         return MSG_TYPE.TRAFFIC_ACCOUNTING, {}
     return MSG_TYPE.TRAFFIC_ACCOUNTING, info
 
-def plugin_agent_info():
+def plugin_agent_info(worker_id):
     import plugin_agent
     info = plugin_agent.plugin_call()
     return MSG_TYPE.AGENT, info
@@ -126,7 +125,7 @@ class Worker:
         self.logger.debug( '%02d:%02d:%02d working...' % (now[3], now[4], now[5]) )
 
         for plugin in self.plugins:
-            msg_type, info = plugin()
+            msg_type, info = plugin(self.worker_id)
             if (not info is None) and len(info) > 0:
                 self.send([msg_type, json.dumps(info)])
         
