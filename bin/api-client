@@ -6,7 +6,7 @@ import ConfigParser
 import json
 import zmq
 
-from kanyun.server import api_client
+from kanyun.client import api_client
 
 # Author: Peng Yuwei<yuwei5@staff.sina.com.cn> 2012-3-27
 # Last update: Peng Yuwei<yuwei5@staff.sina.com.cn> 2012-4-5
