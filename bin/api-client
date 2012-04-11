@@ -25,6 +25,11 @@ def show_result3(rs, row_id):
             print "%s %d results" % (k, len(i))
             print i
     print "%d results of key=%s" % (len(rs), row_id)
+    
+def list_instance_ip():
+    # achieve in listip
+    print 'use listip instead'
+    return
 
 def main():
     if len(sys.argv) == 2:
@@ -32,6 +37,7 @@ def main():
             print "usage:"
             print "\tapi_client"
             print "\tapi_client <cf>"
+            print "\tapi_client -l"
             print "\tapi_client -k <id>"
             print "\tapi_client <id> <cf> <scf>"
             print "\tapi_client <id> <cf> <scf> <statistic> <period> <time_from> [time_to]"
@@ -57,6 +63,9 @@ def main():
         row_id, cf_str, scf_str = sys.argv[1], sys.argv[2], sys.argv[3]
         rs = api_client.invoke_getbykey2(api_socket, row_id, cf_str, scf_str)
         show_result2(rs, row_id, cf_str, scf_str)
+        return
+    elif len(sys.argv) == 2 and sys.argv[1] == '-l':
+        list_instance_ip()
         return
     elif len(sys.argv) == 2:
         cf_str = sys.argv[1]

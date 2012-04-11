@@ -87,7 +87,7 @@ def invoke_statistics(api_client, row_id, cf_str, scf_str, statistic, period=5, 
         else:
             timestr2 = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(float(time_to)))
         print 'statistics info of %s(period=%s)' % (row_id, period)
-        print 'time range:%s --> %s ' % (timestr1, timestr2)
+        #print 'time range:%s --> %s ' % (timestr1, timestr2)
         param[4] = 0
         param[5] = 2
         r = invoke(api_client, param)

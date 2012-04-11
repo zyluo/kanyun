@@ -51,28 +51,31 @@ class Diff():
         self.count = 0
         self.previous = 0.0
         self.diff = 0.0
-        self.time_pass = time.time()
+        self.previous_time = time.time()
+        self.time_pass = 0
     def update(self, value):
         self.count += 1
         if self.first:
             self.first = False
+            self.diff = 0
             self.previous = value
-            self.time_pass = time.time()
+            self.time_pass = time.time() - self.previous_time
+            self.previous_time = time.time()
             return
 
         self.diff = value - self.previous
-        self.time_pass = time.time() - self.time_pass
         self.previous = value
+        self.time_pass = time.time() - self.previous_time
+        self.previous_time = time.time()
             
     def get_diff(self):
         return self.diff;
     def get_time_pass(self):
-        return self.time_pass;
+        return self.time_pass
 
 
 
 class LibvirtMonitor(object):
-
     def __init__(self, uri='qemu:///system'):
         self.conn = libvirt.openReadOnly(uri)
         self.hostname = self.conn.getHostname()
@@ -148,6 +151,7 @@ class LibvirtMonitor(object):
             self.diffs[dom_id] = Diff()
         self.diffs[dom_id].update(dom_cpu_time)
         #%CPU = 100 * cpu_time_diff / (t * nr_cores * 10e9)
+        print "%d * %f / (%d * 1 * %d)" % (100.0, self.diffs[dom_id].get_diff(), self.diffs[dom_id].get_time_pass(), 10e9)
         cpu = 100.0 * self.diffs[dom_id].get_diff() / (self.diffs[dom_id].get_time_pass() * 1 * 10e9)
         print dom_id, 'cpu usage:', cpu, '%, cpu_time:', dom_cpu_time
         # NOTE(lzyeval): libvirt currently can only see total of all vcpu time
@@ -173,8 +177,11 @@ class LibvirtMonitor(object):
         timestamp = self.get_utc_sec()
         return [('blk', blk_dev, (timestamp, rd_bytes, wr_bytes))]
 
+agent = None
 def plugin_call():
-    agent = LibvirtMonitor()
+    global agent
+    if agent is None:
+        agent = LibvirtMonitor()
     ret = agent.collect_info()
     return ret
     
@@ -182,7 +189,7 @@ def plugin_test():
     ret = []
     old_data = None
     agent = LibvirtMonitor()
-    for _ in range(2):
+    for _ in range(60):
         new_data = agent.collect_info()
         if old_data is None:
             # TODO(lzyeval): do something meaningful

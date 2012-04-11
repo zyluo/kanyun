@@ -1,0 +1,75 @@
+#!/usr/bin/env python
+# coding: utf-8
+
+import sys
+import subprocess
+import shlex
+from nova import context
+from nova import db
+from nova import flags
+from nova import utils
+
+def list_instance_ip():
+    ret = dict()
+    admin_ctxt = context.get_admin_context()
+    CMD = "virsh list"
+    buf = subprocess.check_output(shlex.split(CMD), stderr=subprocess.STDOUT)
+    buf = buf.split('\n')
+    buf = buf[2:]
+    for i in buf:
+        line = i.split()
+        if len(line) < 3:
+            continue
+        instance_id = line[1][-6:]
+        instance_id = str(int(instance_id, 16))
+        if utils.is_uuid_like(instance_id):
+            instance_ref = db.instance_get_by_uuid(admin_ctxt, instance_id)
+        else:
+            instance_ref = db.instance_get(admin_ctxt, instance_id)
+
+        inst_info = dict(instance_ref.iteritems())
+
+        fixed_ips_info = db.fixed_ip_get_by_instance(admin_ctxt, instance_id)
+        for info in fixed_ips_info:
+            print line[1], info['address']
+            ret[line[1]] = info['address']
+            break
+
+    return ret
+    
+def main():
+    cmd1 = """sudo iptables -t raw -A PREROUTING -s %s -m comment --comment '%s'"""
+    cmd2 = """sudo iptables -t raw -I PREROUTING -s %s -m comment --comment '%s'"""
+    setup = False # auto setup iptables
+    if len(sys.argv) > 1:
+        if sys.argv[1] == '-a':
+            setup = True
+    utils.default_flagfile()
+    try:
+        flags.FLAGS(sys.argv[:2])
+    except:
+        print 'sudo...'
+        return
+
+    ret = list_instance_ip()
+    has_error = False
+    if setup:
+        for k, i in ret.iteritems():
+            cmd = cmd1 % (i, k)
+            try:
+                subprocess.call(cmd)
+            except:
+                has_error = True
+                print cmd
+                
+            cmd = cmd2 % (i, k)
+            try:
+                subprocess.call(cmd)
+            except:
+                has_error = True
+                print cmd
+    if has_error: 
+        print 'Error.'
+    
+if __name__ == '__main__':
+    main()
