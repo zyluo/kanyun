@@ -16,6 +16,7 @@ from collections import OrderedDict
 from kanyun.server import api_server
 
 class StatisticsTest(unittest.TestCase):
+
     def setUp(self):
         self.mox = mox.Mox()
 
@@ -37,8 +38,10 @@ class StatisticsTest(unittest.TestCase):
             assert s.get_agerage() == isum / i
         print "Statistics test \t\t\t[\033[1;33mOK\033[0m]"
 
+
 def InitApiMox():
     pass
+    
     
 def ApiGetDataMox():
     ts = time.time()
@@ -59,12 +62,16 @@ def ApiGetDataMox():
     rs = OrderedDict(sorted(rs.items(), key=lambda t: t[0]))
     return rs, len(rs), False
     
+    
 class ColumnFamilyMox():
+
     def __init__(self, a='', b=''):
         pass
     pass
     
+    
 class TestApiServer(unittest.TestCase):
+
     def setUp(self):
         self.mox = mox.Mox()
         
@@ -217,6 +224,7 @@ class TestApiServer(unittest.TestCase):
         print "%d AVERAGE results, spend %f seconds" % (count, time.clock())
         print "api_statistics AVERAGE test \t\t\t[\033[1;33mOK\033[0m]"
         print '-' * 60
+
 
 if __name__ == '__main__':
     time.clock()

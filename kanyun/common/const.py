@@ -2,7 +2,6 @@
 # encoding: utf-8
 # TAB char: space
 #
-#
 # Author: Peng Yuwei<yuwei5@staff.sina.com.cn> 2012-4-6
 # Last update: Peng Yuwei<pengyuwei@gmail.com> 2012-4-6
 #

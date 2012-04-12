@@ -1,9 +1,6 @@
 #!/usr/bin/env python
 # encoding: utf-8
 # TAB char: space
-# Task ventilator
-# Binds PUSH socket to tcp://localhost:5557
-# Sends batch of tasks to workers via that socket
 #
 # Author: Peng Yuwei<yuwei5@staff.sina.com.cn> 2012-3-27
 # Last update: Peng Yuwei<yuwei5@staff.sina.com.cn> 2012-3-28
@@ -22,20 +19,6 @@ from kanyun.database.cassadb import CassaDb
 
 """
 Save the vm's system info data to db.
-                         +--- <-- Worker's PUSH
-                         |
-                         |
-                   +----------+
-                   |   PULL   |     <-- feedback
-               +---|==========|
-   Client--->  |REP|  Server  |
-               +---|==========|
-                   |   PUB    |     <-- broadcast
-                   +----------+
-                         |
-                         |
-                         +----> Worker's SUB
-                         +----> DB
 
 protocol:
     http://wiki.sinaapp.com/doku.php?id=monitoring
@@ -49,8 +32,10 @@ logger.setLevel(logging.NOTSET)
             
 
 class Statistics():
+
     def __init__(self):
         self.clean()
+        
     def clean(self):
         self.first = True
         self.count = 0
@@ -76,6 +61,7 @@ class Statistics():
             self.min = value
         self.diff = value - self.previous
         self.previous = value
+        
     def get_value(self, which):
         if which == STATISTIC.AVERAGE:
             return self.get_agerage()
@@ -92,7 +78,8 @@ class Statistics():
             return 0
             
     def get_diff(self):
-        return self.diff;
+        return self.diff
+        
     def get_agerage(self):
         if self.count == 0:
             return 0
@@ -100,10 +87,13 @@ class Statistics():
             return self.sum / self.count
     def get_sum(self):
         return self.sum
+        
     def get_max(self):
         return self.max
+        
     def get_min(self):
         return self.min
+        
     def get_samples(self):
         # TODO
         return 0;
@@ -126,6 +116,7 @@ def get_db():
         db = CassaDb('data', api_cfg['db_host'])
     return db
     
+    
 def api_getdata(row_id, cf_str, scf_str, time_from=0, time_to=0):
     """
     param type: UnicodeType and IntType
@@ -147,6 +138,7 @@ def api_getdata(row_id, cf_str, scf_str, time_from=0, time_to=0):
     count = 0 if rs is None else len(rs)
     
     return rs, count, False if (count == 20000) else True
+    
     
 def analyize_data(rs, period, statistic):
     """[private func]analyize the data
@@ -187,8 +179,9 @@ def analyize_data(rs, period, statistic):
         
     return this_period
 
+
 ############################# public API interface #############################
-def api_getInstancesList(cf_str):
+def api_get_instances_list(cf_str):
     if not type(cf_str) is types.UnicodeType:
         print 'param types error'
         return None
@@ -205,7 +198,8 @@ def api_getInstancesList(cf_str):
     
     return ret
     
-def api_getbyInstanceID(row_id, cf_str):
+    
+def api_get_by_instance_id(row_id, cf_str):
     if not type(row_id) is types.UnicodeType \
         or not type(cf_str) is types.UnicodeType:
         print 'param types error'
@@ -233,6 +227,7 @@ def api_getbykey(row_id, cf_str, scf_str, limit=20000):
     count = 0 if rs is None else len(rs)
     
     return rs, count, False if (count == 20000) else True
+
 
 def api_statistic(row_id, cf_str, scf_str, statistic, period=5, time_from=0, time_to=0):
     """statistic is STATISTIC enum

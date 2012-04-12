@@ -62,7 +62,6 @@ if __name__ == '__main__':
 
     # data DB
     db = CassaDb('data', server_cfg['db_host'])
-#    data_db = pycassa.ConnectionPool('data', server_list=[server_cfg['db_host']])
 
     while True:
         try:
@@ -70,44 +69,6 @@ if __name__ == '__main__':
         except zmq.core.error.ZMQError:
             pass
         
-        # parse the command form client
-#        if socks.get(handler) == zmq.POLLIN:
-#            print 'REQ poolin'
-#            msg_type, msg_id, msg_json = handler.recv_multipart()
-#            msg_body = json.loads(msg_json)
-#            cli_msg = {'code': 200, 'desc': 'OK'}
-#            try:
-#                cmd = msg_body['cmd']
-#                msg = msg_body['msg']
-#                print cmd, msg
-#                print
-#                # access db and get return msg
-#                if cmd in ['read_lb', 'read_lb_list', 'read_load_balancer_id_all',
-#                           'read_http_server_name_all']:
-#                    db_res = getattr(db, cmd)(**msg)
-#                    cli_msg.update(db_res)
-#                elif cmd in ['create_lb', 'delete_lb', 'update_lb_config',
-#                             'update_lb_instances', 'update_lb_http_server_names']:
-#                    getattr(db, cmd)(**msg)
-#                    work_cmd = "update_lb" if cmd.startswith("update_lb") else cmd
-#                    work_msg = get_work_msg(cmd, **msg)
-#                    print ">>>>>>>>>", work_msg
-#                    print
-#                    broadcast.send_multipart([msg_type, msg_id,
-#                                              json.dumps({'cmd': work_cmd,
-#                                                          'msg': work_msg})])
-#                else:
-#                    raise Exception("Invalid command")
-#            except Exception, e:
-#                print traceback.format_exc()
-#                cli_msg['code'] = 500
-#                cli_msg['desc'] = str(e)
-#            print cmd, cli_msg
-#            print
-#            handler.send_multipart([msg_type, msg_id,
-#                                    json.dumps({'cmd': cmd,
-#                                                'msg': cli_msg})])
-
         # parse the data from worker and save to database
         if socks.get(feedback) == zmq.POLLIN:
             try:

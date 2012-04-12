@@ -16,9 +16,11 @@ import mox
 from kanyun.worker.worker import Worker
 from kanyun.worker.worker import MSG_TYPE
 
+
 def PluginTrafficAccountingInfoMox(worker_id):
     info  = {'instance-00000001': ('10.0.0.2', 1332409327, '0')}
     return MSG_TYPE.TRAFFIC_ACCOUNTING, info
+
 
 def PluginAgentInfo(worker_id):
     info = {'instance-000000ba@sws-yz-5': 
@@ -32,27 +34,37 @@ def PluginAgentInfo(worker_id):
 
 
 class ZmqPollerMox():
+
     def register(self, p1, p2):
         pass
+        
     def poll(self, p1):
         return dict()
         
 class ZmqContextMox():
+
     def socket(self, mode):
         return ZmqContextSocketMox()
+        
+        
 class ZmqContextSocketMox():
+
     def __init__(self):
         self.count = 0
+        
     def connect(self, conn_str):
         print 'connect', conn_str
         pass
+        
     def setsockopt(self, para1, para2):
         pass
+        
     def send_multipart(self, msg):
         print "send", msg
         self.count += len(msg)
 
 class WorkerTest(unittest.TestCase):
+
     def setUp(self):
         self.mox = mox.Mox()
 
@@ -111,6 +123,7 @@ class WorkerTest(unittest.TestCase):
         assert w.feedback.count == len(msg)
         self.mox.VerifyAll()
         print "send test \t[\033[1;33mOK\033[0m]"
+        
     def testInfoPush(self):
         self.mox.ReplayAll()
         w = Worker(context = ZmqContextMox())
@@ -122,6 +135,7 @@ class WorkerTest(unittest.TestCase):
       
 class WorkerIntegrationTest():
 #class WorkerIntegrationTest(unittest.TestCase):
+
     def setUp(self):
         print 'Integration test of worker.'
         pass
@@ -156,6 +170,7 @@ class WorkerIntegrationTest():
             
             #if only test the first working timepoint, break here.
             #break
+
 
 if __name__ == '__main__':
     print 'Unit test of worker.'

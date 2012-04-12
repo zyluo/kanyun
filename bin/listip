@@ -11,6 +11,7 @@ from nova import db
 from nova import flags
 from nova import utils
 
+
 def list_instance_ip():
     ret = dict()
     admin_ctxt = context.get_admin_context()
@@ -39,6 +40,7 @@ def list_instance_ip():
     print len(ret), 'instances.'
 
     return ret
+    
     
 def main():
     setup = False # auto setup iptables
@@ -83,6 +85,7 @@ def main():
             print 'Auto set iptables policy failed.'
         else:
             print "Use 'sudo iptables -L -n' to look the policy."
+        
         
 if __name__ == '__main__':
     main()

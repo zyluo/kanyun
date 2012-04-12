@@ -9,43 +9,13 @@ from xml.etree import ElementTree
 
 import libvirt
 """
-db:
-+-------------------------------------+
-| cf=cpu/mem/...(one item as one cf ) |
-+-------------------------------------+---------+
-| scf=total/devname                             |
-+==============+==============+=======+=========+
-|              | col=utc_time | time2 | ...     |
-+==============+==============+=======+=========+
-| key=instance | val1(subval) | val2  | ...     |
-+===============================================+
-
-protocol:
-
-[('cpu', 'total', (utc_time, cpu_time)), 
-('mem', 'total', (utc_time, max, free)), 
-('nic', 'vnet8', (utc_time, incoming, outgoing(内网))), 
-('blk', 'vda', (utc_time, read, write)), 
-('blk', 'vdb', (utc_time, read, write))],
-
-(old): {'instance-000000ba@sws-yz-5': 
-[('cpu', 'total', (1332400088.149444, 12132270000000L)),  
-('mem', 'total', (1332400088.149444, 8388608L, 8388608L)), 
-('nic', 'vnet8', (1332400088.152285, 427360746L, 174445810L)), 
-('blk', 'vda', (1332400088.156346, 298522624L, 5908590592L)), 
-('blk', 'vdb', (1332400088.158202, 2159616L, 1481297920L))], 
-
-(new): {'instance-000000ba@sws-yz-5': 
-[('cpu', 'total', (1332400088.149444, 12132270000000L)),  
-('mem', 'total', (1332400088.149444, 8388608L, 8388608L)), 
-('nic', 'vnet8', (1332400088.152285, 427360746L, 174445810L)), 
-('blk', 'vda', (1332400088.156346, 298522624L, 5908590592L)), 
-('blk', 'vdb', (1332400088.158202, 2159616L, 1481297920L))], 
+collect info of vm
 """
 
 # add by pyw
 class Diff():
     """TODO:same as class Statistics() in server, merge."""
+    
     def __init__(self):
         self.first = True
         self.count = 0
@@ -53,6 +23,7 @@ class Diff():
         self.diff = 0.0
         self.previous_time = time.time()
         self.time_pass = 0
+        
     def update(self, value):
         self.count += 1
         if self.first:
@@ -69,13 +40,14 @@ class Diff():
         self.previous_time = time.time()
             
     def get_diff(self):
-        return self.diff;
+        return self.diff
+        
     def get_time_pass(self):
         return self.time_pass
 
 
-
 class LibvirtMonitor(object):
+
     def __init__(self, uri='qemu:///system'):
         self.conn = libvirt.openReadOnly(uri)
         self.hostname = self.conn.getHostname()
@@ -153,7 +125,7 @@ class LibvirtMonitor(object):
         #%CPU = 100 * cpu_time_diff / (t * nr_cores * 10^9)
         #print "%d * %f / (%d * 1 * %d)" % (100.0, self.diffs[dom_id].get_diff(), self.diffs[dom_id].get_time_pass(), 1e9)
         cpu = 100.0 * self.diffs[dom_id].get_diff() / (self.diffs[dom_id].get_time_pass() * 1 * 1e9)
-        print dom_id, 'cpu usage:', cpu, '%, cpu_time:', dom_cpu_time
+        print dom_id, 'cpu usage:', cpu, '%, cpu_time:', dom_cpu_time, "mem:", dom_memory_kb, "/", dom_max_mem_kb
         # NOTE(lzyeval): libvirt currently can only see total of all vcpu time
 #        return [('cpu', 'total', (timestamp, dom_cpu_time)),
 #                ('mem', 'total', (timestamp, dom_max_mem_kb, dom_memory_kb))]
@@ -167,6 +139,7 @@ class LibvirtMonitor(object):
         (rx_bytes, rx_packets, rx_errs, rx_drop, tx_bytes,
          tx_packets, tx_errs, tx_drop) = dom_conn.interfaceStats(nic_dev)
         timestamp = self.get_utc_sec()
+        print "rx=", rx_bytes, "tx=", tx_bytes
         return [('nic', nic_dev, (timestamp, rx_bytes, tx_bytes))]
 
     def _collect_blk_dev_info(self, dom_conn, blk_dev):
@@ -175,6 +148,7 @@ class LibvirtMonitor(object):
         """
         rd_req, rd_bytes, wr_req, wr_bytes, errs = dom_conn.blockStats(blk_dev)
         timestamp = self.get_utc_sec()
+        print "r=", rd_bytes, "w=", wr_bytes
         return [('blk', blk_dev, (timestamp, rd_bytes, wr_bytes))]
 
 agent = None
@@ -184,6 +158,7 @@ def plugin_call():
         agent = LibvirtMonitor()
     ret = agent.collect_info()
     return ret
+    
     
 def plugin_test():
     ret = []
@@ -231,5 +206,6 @@ def plugin_test():
         
     return ret
     
-if __name__ == '__main__':
-    plugin_test()
+    
+#if __name__ == '__main__':
+#    plugin_test()

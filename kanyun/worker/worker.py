@@ -2,9 +2,6 @@
 # encoding: utf-8
 # TAB char: space
 #
-# Task worker - design 2
-# Adds pub-sub flow to receive and respond to kill signal
-#
 # Author: Jeremy Avnet (brainsik) <spork(dash)zmq(at)theory(dot)org>
 # Last update: Peng Yuwei<pengyuwei@gmail.com> 2012-4-6
 #
@@ -30,6 +27,7 @@ def plugin_heartbeat(worker_id, status = 1):
     info = [worker_id, time.time(), status]
     return MSG_TYPE.HEART_BEAT, info
     
+    
 def plugin_local_cpu(worker_id):
     # FIXME:how to use import smart?
     """
@@ -43,12 +41,14 @@ def plugin_local_cpu(worker_id):
     info = ret.stdout.readlines()
     return MSG_TYPE.LOCAL_INFO, [{"cpu": ''.join(info)}]
 
+
 def plugin_traffic_accounting_info(worker_id):
     import plugin_traffic_accounting
     info = plugin_traffic_accounting.get_traffic_accounting_info()
     if len(info) <= 0:
         return MSG_TYPE.TRAFFIC_ACCOUNTING, {}
     return MSG_TYPE.TRAFFIC_ACCOUNTING, info
+
 
 def plugin_agent_info(worker_id):
     import plugin_agent
@@ -80,6 +80,7 @@ class Worker:
     
     def clear_plugin(self):
         self.plugins = list()
+        
     def register_plugin(self, plugin):
         self.plugins.append(plugin)
     
@@ -142,6 +143,7 @@ class Worker:
     
 running = True
 
+
 def SignalHandler(sig, id):
     global running
     
@@ -152,6 +154,7 @@ def SignalHandler(sig, id):
     elif sig == signal.SIGINT:
         print 'Waiting for quit...'
         running = False
+
 
 def register_signal():
     signal.signal(signal.SIGUSR1, SignalHandler)

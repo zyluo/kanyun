@@ -8,6 +8,7 @@
 import pycassa
 
 class CassaDb():
+
     def __init__(self, keyspace = 'data', ip = '127.0.0.1'):
         """
         # self.cfs:
@@ -17,6 +18,7 @@ class CassaDb():
         """
         self.cfs = dict()
         self.db = pycassa.ConnectionPool(keyspace, server_list=[ip])
+        
     def insert(self, cf_str, key, values):
         """insert(key, columns[, timestamp][, ttl][, write_consistency_level])
         cf: ColumnFamily String"""

@@ -8,22 +8,30 @@ import mox
 from kanyun.database import cassadb
 
 class cassadbMox():
+
     def __init__(self, keyspace='data', ip='127.0.0.1'):
         self.count = 0
+        
     def insert(self, cf_str, key, values):
         pass
+        
     def get_range(self, cf_str):
         pass
+        
     def get(self, cf_str, key, super_column, column_start, column_finish, column_count = 20000):
         pass
+        
     def getbykey(self, cf_str, key):
         pass
+        
     def getbykey2(self, cf_str, key, super_column, column_count):
         pass
+        
     def get_cf(self, cf_str):
         pass
 
 class CassaDBTest(unittest.TestCase):
+
     def setUp(self):
         self.mox = mox.Mox()
 

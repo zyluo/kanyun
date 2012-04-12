@@ -12,16 +12,6 @@ request:
 sudo iptables -t raw -A PREROUTING -s $instance_ip -m comment --comment "instance_id"
 sudo iptables -t raw -I PREROUTING -s 10.0.0.3 -m comment --comment "instance-0000003e"
 
-db:
-+--------------+
-| cf=vmnetwork |
-+--------------+-------------------------------------------+
-| scf=IP                                                   |
-+===================+===========+=======+==================+
-|                   | col=time1 | time2 | ...              |
-+===================+===========+=======+==================+
-| key=instance_name |   val1    | val2  | ...              |
-+==========================================================+
 """
 
 def get_hostname():

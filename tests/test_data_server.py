@@ -15,7 +15,9 @@ from collections import OrderedDict
 
 from kanyun.server.data_server import *
 
+
 class TestLivingStatus(unittest.TestCase):
+
     def setUp(self):
         self.mox = mox.Mox()
         
@@ -43,7 +45,9 @@ class TestLivingStatus(unittest.TestCase):
         self.assertTrue(ret == 1)
         print "LivingStatus test \t[\033[1;33mOK\033[0m]"
     
+    
 class TestDataServer(unittest.TestCase):
+
     def setUp(self):
         self.mox = mox.Mox()
         
@@ -61,6 +65,7 @@ class TestDataServer(unittest.TestCase):
         plugin_decoder_agent(db, data)
         plugin_decoder_traffic_accounting(db, data)
         print "DataServerFunc test \t[\033[1;33mOK\033[0m]"
+
 
 if __name__ == '__main__':
     time.clock()

@@ -58,11 +58,11 @@ if __name__ == '__main__':
             print "recv:", msg
             row_id = msg[1]
             cf_str = msg[2]
-            rs, count, _ = api_server.api_getbyInstanceID(row_id, cf_str)
+            rs, count, _ = api_server.api_get_by_instance_id(row_id, cf_str)
             api_socket.send (json.dumps(rs))
         elif msg[0] == 'L':
             cf_str = msg[1]
-            rs = api_server.api_getInstancesList(cf_str)
+            rs = api_server.api_get_instances_list(cf_str)
             api_socket.send (json.dumps(rs))
         else:
             api_socket.send (json.dumps([]))

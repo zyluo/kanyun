@@ -6,7 +6,6 @@
 # Last update: Peng Yuwei<yuwei5@staff.sina.com.cn> 2012-3-28
 
 import time
-
 from kanyun.server.api_client import ApiClient
 
 

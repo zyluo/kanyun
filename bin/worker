@@ -2,9 +2,6 @@
 # encoding: utf-8
 # TAB char: space
 #
-# Task worker - design 2
-# Adds pub-sub flow to receive and respond to kill signal
-#
 # Author: Jeremy Avnet (brainsik) <spork(dash)zmq(at)theory(dot)org>
 # Last update: Peng Yuwei<pengyuwei@gmail.com> 2012-4-6
 #
@@ -20,6 +17,7 @@ import ConfigParser
 from kanyun.common.const import *
 from kanyun.worker.worker import *
 from kanyun.database.cassadb import CassaDb
+
 
 def main(param):
     if len(sys.argv) == 2 and sys.argv[1] == '--help':
@@ -52,7 +50,6 @@ def main(param):
     # Socket for control input
     broadcast = context.socket(zmq.SUB)
     broadcast.connect("tcp://%(broadcast_host)s:%(broadcast_port)s" % cfg)
-#    broadcast.connect("tcp://localhost:5558")
     broadcast.setsockopt(zmq.SUBSCRIBE, "lb")
 
     worker = Worker(context=context, feedback_host=cfg['feedback_host'], feedback_port=cfg['feedback_port'], logger=logger, worker_id = WORKER_ID)
@@ -61,9 +58,6 @@ def main(param):
     worker.register_plugin(plugin_heartbeat)
     worker.register_plugin(plugin_traffic_accounting_info)
     worker.register_plugin(plugin_agent_info)
-    # Socket to send messages to
-#    feedback = context.socket(zmq.PUSH)
-#    feedback.connect("tcp://localhost:5559")
 
     print "Starting worker..."
     print "id=%s, log=%s" % (worker.worker_id, cfg['log'])
@@ -90,16 +84,14 @@ def main(param):
             worker.send([msg_type, msg_id,
                                      json.dumps({'worker_id': WORKER_ID,
                                                  'status': 200})])
-#            feedback.send_multipart([msg_type, msg_id,
-#                                     json.dumps({'worker_id': WORKER_ID,
-#                                                 'status': 200})])
-    
+
         # push the info data to server
         worker.info_push()
         
         if not running:
             break
     poller.unregister(broadcast)
+        
         
 if __name__ == '__main__':
     main(True)

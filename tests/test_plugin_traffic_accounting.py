@@ -13,16 +13,21 @@ from kanyun.worker import plugin_traffic_accounting
 
 def getHostNameMox():
     return "@host"
+    
+    
 def SubprocessCheckOutputMox():
     output = """Chain PREROUTING (policy ACCEPT 24195128 packets, 2563747508 bytes)
     pkts      bytes target     prot opt in     out     source               destination         
    10998  4003272            all  --  *      *       10.0.0.2             0.0.0.0/0           /* instance-00000001 */"""
     return output
 
+
 class PluginTrafficAccountingTest(unittest.TestCase):
+
     def setUp(self):
         self.mox = mox.Mox()
         pass
+        
     def tearDown(self):
         self.mox.UnsetStubs()
 
@@ -43,6 +48,7 @@ class PluginTrafficAccountingTest(unittest.TestCase):
         print info
         self.mox.VerifyAll()
         self.assertEquals(info['instance-00000001'+plugin_traffic_accounting.hostname][0], '10.0.0.2')
+
 
 if __name__ == '__main__':
     unittest.main()

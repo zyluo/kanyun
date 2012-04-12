@@ -95,6 +95,7 @@ SAMPLE_XML = """\
 """
 
 class TestLibvirtMonitor(unittest.TestCase):
+
     def setUp(self):
         self.mocker = mox.Mox()
         self.a = worker.LibvirtMonitor()
@@ -104,6 +105,7 @@ class TestLibvirtMonitor(unittest.TestCase):
         print info
         
 class TestLibvirtMonitorMox(unittest.TestCase):
+
     def setUp(self):
         self.mocker = mox.Mox()
         #self.a = self.mocker.CreateMock(worker.LibvirtMonitor)

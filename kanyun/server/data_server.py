@@ -1,9 +1,6 @@
 #!/usr/bin/env python
 # encoding: utf-8
 # TAB char: space
-# Task ventilator
-# Binds PUSH socket to tcp://localhost:5557
-# Sends batch of tasks to workers via that socket
 #
 # Author: Lev Givon <lev(at)columbia(dot)edu>
 # Last update: Peng Yuwei<yuwei5@staff.sina.com.cn> 2012-3-19
@@ -23,24 +20,11 @@ from kanyun.common.const import *
 
 """
 Save the vm's system info data to db.
-                         +--- <-- Worker's PUSH
-                         |
-                         |
-                   +----------+
-                   |   PULL   |     <-- feedback
-               +---|==========|
-   Client--->  |REP|  Server  |
-               +---|==========|
-                   |   PUB    |     <-- broadcast
-                   +----------+
-                         |
-                         |
-                         +----> Worker's SUB
-                         +----> DB
-                         
 protocol:
     http://wiki.sinaapp.com/doku.php?id=monitoring
 """
+living_status = dict()
+
 
 logger = logging.getLogger()
 handler = logging.FileHandler("/tmp/kanyun-server.log")
@@ -48,17 +32,21 @@ logger.addHandler(handler)
 logger.setLevel(logging.NOTSET)
             
 class LivingStatus():
+
     def __init__(self, worker_id = '1'):
         self.min = 2 # 2min
         self.update()
         self.alerted = False
         self.worker_id = worker_id
         self.previous_alert_time = 0
+        
     def update(self):
         self.update_time = time.time()
         self.alerted = False
+        
     def is_die(self):
         return time.time() - self.update_time > self.min * 60 
+        
     def on_die(self):
         ret = 0
         if not self.alerted:
@@ -71,6 +59,7 @@ class LivingStatus():
             ret += 1
             
         return ret
+        
     ####### private ########
     def alert_once(self):
         # TODO: dispose timeout worker here 
@@ -78,17 +67,18 @@ class LivingStatus():
         print '[WARNING]worker', self.worker_id, "is dead. email sendto admin"
         print '*' * 400
         self.alerted = True
+        
     def alert(self):
         print '\033[0;31m[WARNING]\033[0mworker', self.worker_id, "is dead. Total=", len(living_status)
         self.previous_alert_time = time.time()
 
-living_status = dict()
 
 def autotask_heartbeat():
     global living_status
     for worker_id, ls in living_status.iteritems():
         if ls.is_die():
             ls.on_die()
+
 
 def clean_die_warning():
     global config
@@ -105,12 +95,14 @@ def clean_die_warning():
     living_status = new_list
     print i, "workers cleaned:"
     
+    
 def list_workers():
     global living_status
     print "-" * 60
     for worker_id, ls in living_status.iteritems():
         print 'worker', worker_id, "update @", ls.update_time
     print len(living_status), "workers."
+    
     
 def plugin_heartbeat(db, data):
     if data is None or len(data) < 3:
@@ -126,6 +118,7 @@ def plugin_heartbeat(db, data):
         logger.debug("%s quited" % (worker_id))
         del living_status[worker_id]
 
+
 def plugin_decoder_agent(db, data):
     if data is None or len(data) <= 0:
         logger.debug('invalid data:%s' % (data))
@@ -135,6 +128,7 @@ def plugin_decoder_agent(db, data):
     plugin_agent_srv.plugin_decoder_agent(db, data)
     print 'spend \033[1;33m%f\033[0m seconds' % (time.time() - pass_time)
     print '-' * 60
+    
     
 def plugin_decoder_traffic_accounting(db, data):
     # protocol:{'instance-00000001': ('10.0.0.2', 1332409327, '0')}
@@ -149,14 +143,6 @@ def plugin_decoder_traffic_accounting(db, data):
             db.insert('vmnetwork', i, {data[i][0]: {data[i][1]: data[i][2]}})
 
 
-#def get_work_msg(cmd, **msg):
-#    res = db.read_whole_lb(**msg)
-#    if cmd == "delete_lb":
-#        res = dict(filter(lambda (x, y): x in ['user_name', 'tenant',
-#                                               'load_balancer_id',
-#                                               'protocol'], res.items()))
-#    return res
-
 def SignalHandler(sig, id):
     global running
     
@@ -166,6 +152,7 @@ def SignalHandler(sig, id):
         clean_die_warning()
     elif sig == signal.SIGINT:
         running = False
+
 
 def register_signal():
     signal.signal(signal.SIGUSR1, SignalHandler)

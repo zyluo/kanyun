@@ -17,22 +17,26 @@ def show_result(rs, cf_str):
     for i in rs:
         print "%s" % (i)
     print "%d results of cf=%s" % (len(rs), cf_str)
+    
+    
 def show_result2(rs, row_id, cf_str, scf_str):
     for k, i in rs.iteritems():
         print "{%s:%s}" % (k, i)
     print "%d results of key=%s,cf=%s,scf=%s" % (len(rs), row_id, cf_str, scf_str)
+
+
 def show_result3(rs, row_id):
     for r in rs:
         for k, i in r.iteritems():
             print "%s %d results" % (k, len(i))
             print i
     print "%d results of key=%s" % (len(rs), row_id)
+    
+    
 def show_result4(rs, row_id='', cf_str='', scf_str='', statistic=0, time_from=0, time_to=0):
     strs = "Result"
     if const.statistic_str.has_key(statistic):
         strs = const.statistic_str[statistic]
-        
-    rs = OrderedDict(sorted(rs.items(), key=lambda t: t[0]))
         
     timestr1 = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(float(time_from)))
     if int(time_to) == 0:
@@ -42,16 +46,20 @@ def show_result4(rs, row_id='', cf_str='', scf_str='', statistic=0, time_from=0,
     print 'statistics info of %s(cf=%s)' % (row_id, cf_str)
     print 'time range:%s --> %s ' % (timestr1, timestr2)
     print strs + ":"
-    for k, i in rs.iteritems():
-        timestr = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(float(k)))
-        print "\t", timestr, "=", i
+    if rs is None:
+        print '\tno result'
+    else:
+        rs = OrderedDict(sorted(rs.items(), key=lambda t: t[0]))
+        for k, i in rs.iteritems():
+            timestr = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(float(k)))
+            print "\t", timestr, "=", i
     
     
-        
 def list_instance_ip():
     # achieve in listip
     print 'use listip instead'
     return
+
 
 def main():
     if len(sys.argv) == 2:
