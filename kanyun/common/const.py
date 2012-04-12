@@ -22,3 +22,11 @@ class STATISTIC:
     MINIMUM = 2
     AVERAGE = 3
     SAMPLES = 4
+
+statistic_str = dict()
+statistic_str[STATISTIC.SUM] = "SUM"
+statistic_str[STATISTIC.MAXIMUM] = "MAXIMUM"
+statistic_str[STATISTIC.MINIMUM] = "MINIMUM"
+statistic_str[STATISTIC.AVERAGE] = "AVERAGE"
+statistic_str[STATISTIC.SAMPLES] = "SAMPLES"
+

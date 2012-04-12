@@ -12,6 +12,7 @@ import sys
 import time
 import types
 import json
+import logging
 import traceback
 import ConfigParser
 import zmq
@@ -41,6 +42,11 @@ protocol:
 [u'S', u'instance-00000001@pyw.novalocal', u'cpu', u'total', 0, 5, 1332897600, 0]
 """
 
+logger = logging.getLogger()
+handler = logging.FileHandler("/tmp/api-server.log")
+logger.addHandler(handler)
+logger.setLevel(logging.NOTSET)
+            
 
 class Statistics():
     def __init__(self):
@@ -122,6 +128,7 @@ def get_db():
     
 def api_getdata(row_id, cf_str, scf_str, time_from=0, time_to=0):
     """
+    param type: UnicodeType and IntType
     return: recordset, count, bool(count > limit?)
     """
     if not type(row_id) is types.UnicodeType \
@@ -136,13 +143,15 @@ def api_getdata(row_id, cf_str, scf_str, time_from=0, time_to=0):
     if time_to == 0:
         time_to = time.time()
     
-    rs = db.get(cf_str, row_id, super_column=scf_str, column_start=time_from, column_finish=int(float(time_to)), column_count=20000)
+    rs = db.get(cf_str, row_id, super_column=scf_str, column_start=time_from, column_finish=time_to, column_count=20000)
     count = 0 if rs is None else len(rs)
     
     return rs, count, False if (count == 20000) else True
     
 def analyize_data(rs, period, statistic):
-    """[private func]analyize the data"""
+    """[private func]analyize the data
+    period: minutes
+    """
     if rs is None or not type(period) is types.IntType or not type(statistic) is types.IntType:
         return None
     t = 0
@@ -156,12 +165,12 @@ def analyize_data(rs, period, statistic):
         if t == 0:
             print '\tget first value'
             st.clean()
-            t = key
+            t = timestmp
             key_time = time.gmtime(timestmp)
-        if key >= t + period:
-            print '\tnext'
+        if timestmp >= t + period*60:
+            print '\tnext', key, ">=", t, "+", period
             st.clean()
-            t = key
+            t = timestmp
             key_time = time.gmtime(timestmp)
         st.update(float(value))
         key2 = time.mktime((key_time.tm_year, key_time.tm_mon, key_time.tm_mday, key_time.tm_hour, key_time.tm_min,0,0,0,0))
@@ -210,7 +219,7 @@ def api_getbyInstanceID(row_id, cf_str):
     
 def api_getbykey(row_id, cf_str, scf_str, limit=20000):
     """
-    example:cf=vmnetwork,scf=10.0.0.1,key=instance-0000002
+    example:cf=u'vmnetwork',scf=u'10.0.0.1',key=u'instance-0000002'
     return: recordset, count, bool(count > limit?)
     """
     if not type(row_id) is types.UnicodeType \
@@ -244,7 +253,11 @@ def api_statistic(row_id, cf_str, scf_str, statistic, period=5, time_from=0, tim
     if not rs is None and count > 0:
         buf = analyize_data(rs, 1, statistic)
         ret = analyize_data(buf, period, statistic)
-        ret_len = 0 if ret is None else len(ret)
+        if ret is None:
+            ret_len = 0
+        else:
+            ret = OrderedDict(sorted(ret.items(), key=lambda t: t[0]))
+            ret_len = len(ret)
         print ret_len, "result."
     else:
         print "no result."

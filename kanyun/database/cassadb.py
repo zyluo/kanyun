@@ -40,7 +40,7 @@ class CassaDb():
                 pass
             
         return rs
-        
+    
     def get(self, cf_str, key, super_column, column_start, column_finish, column_count = 20000):
         """get(key[, columns][, column_start][, column_finish][, column_count]
         [, column_reversed][, include_timestamp][, super_column][, read_consistency_level])

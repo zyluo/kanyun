@@ -38,27 +38,25 @@ class CassaDBTest(unittest.TestCase):
         column_start, column_finish = None, None
         column_count = 0
 
-        # TODO:how to mox the class?how to mox the constructor func of class?
-#        self.mox.StubOutWithMock(db, 'insert')
-#        db.insert().AndReturn('')
-#    
-#        self.mox.StubOutWithMock(cassadb, 'CassaDb')
-#        cassadb.CassaDb().AndReturn(cassadbMox())
-#        self.mox.ReplayAll()
-#        
-#        db = cassadb.CassaDb()
-#        db.insert(cf_str, key, values)
-#        db.get_range(cf_str)
-#        db.get(cf_str, key, super_column, column_start, column_finish, column_count = 20000)
-#        db.getbykey(cf_str, key)
-#        db.getbykey2(cf_str, key, super_column, column_count)
-#        db.get_cf(cf_str)
-        self.mox.VerifyAll()
+    def GetTest(self):
+        cf_str = "cpu"
+        key = "instance-00000001@pyw.novalocal"
+        super_column = 'total'
+        column_start, column_finish = '', ''
+        column_count = 5
+        column_reversed = True
+        
+        pool = pycassa.ConnectionPool('data', server_list=['127.0.0.1'])
+        cf = pycassa.ColumnFamily(pool, cf_str)
+        rs = cf.get(key=key, super_column=super_column, column_start=column_start, column_finish=column_finish, column_reversed=True, column_count=column_count)
+        print rs
+
 
 if __name__ == '__main__':
     print 'Unit test of worker.'
     DBTestSuite = unittest.TestSuite()
     DBTestSuite.addTest(CassaDBTest("ObjectTest"))
+    DBTestSuite.addTest(CassaDBTest("GetTest"))
         
     runner = unittest.TextTestRunner()
     runner.run(DBTestSuite)

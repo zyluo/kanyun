@@ -57,7 +57,7 @@ class Diff():
         self.count += 1
         if self.first:
             self.first = False
-            self.diff = 0
+            self.diff = 0.0
             self.previous = value
             self.time_pass = time.time() - self.previous_time
             self.previous_time = time.time()
@@ -150,9 +150,9 @@ class LibvirtMonitor(object):
         if not self.diffs.has_key(dom_id):
             self.diffs[dom_id] = Diff()
         self.diffs[dom_id].update(dom_cpu_time)
-        #%CPU = 100 * cpu_time_diff / (t * nr_cores * 10e9)
-        print "%d * %f / (%d * 1 * %d)" % (100.0, self.diffs[dom_id].get_diff(), self.diffs[dom_id].get_time_pass(), 10e9)
-        cpu = 100.0 * self.diffs[dom_id].get_diff() / (self.diffs[dom_id].get_time_pass() * 1 * 10e9)
+        #%CPU = 100 * cpu_time_diff / (t * nr_cores * 10^9)
+        #print "%d * %f / (%d * 1 * %d)" % (100.0, self.diffs[dom_id].get_diff(), self.diffs[dom_id].get_time_pass(), 1e9)
+        cpu = 100.0 * self.diffs[dom_id].get_diff() / (self.diffs[dom_id].get_time_pass() * 1 * 1e9)
         print dom_id, 'cpu usage:', cpu, '%, cpu_time:', dom_cpu_time
         # NOTE(lzyeval): libvirt currently can only see total of all vcpu time
 #        return [('cpu', 'total', (timestamp, dom_cpu_time)),

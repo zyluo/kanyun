@@ -5,8 +5,10 @@ import time
 import ConfigParser
 import json
 import zmq
+from collections import OrderedDict
 
 from kanyun.client import api_client
+from kanyun.common import const
 
 # Author: Peng Yuwei<yuwei5@staff.sina.com.cn> 2012-3-27
 # Last update: Peng Yuwei<yuwei5@staff.sina.com.cn> 2012-4-5
@@ -25,7 +27,27 @@ def show_result3(rs, row_id):
             print "%s %d results" % (k, len(i))
             print i
     print "%d results of key=%s" % (len(rs), row_id)
+def show_result4(rs, row_id='', cf_str='', scf_str='', statistic=0, time_from=0, time_to=0):
+    strs = "Result"
+    if const.statistic_str.has_key(statistic):
+        strs = const.statistic_str[statistic]
+        
+    rs = OrderedDict(sorted(rs.items(), key=lambda t: t[0]))
+        
+    timestr1 = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(float(time_from)))
+    if int(time_to) == 0:
+        timestr2 = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
+    else:
+        timestr2 = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(float(time_to)))
+    print 'statistics info of %s(cf=%s)' % (row_id, cf_str)
+    print 'time range:%s --> %s ' % (timestr1, timestr2)
+    print strs + ":"
+    for k, i in rs.iteritems():
+        timestr = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(float(k)))
+        print "\t", timestr, "=", i
     
+    
+        
 def list_instance_ip():
     # achieve in listip
     print 'use listip instead'
@@ -56,8 +78,10 @@ def main():
         
     context = zmq.Context()
 
-    api_socket = context.socket(zmq.REQ)
-    api_socket.connect("tcp://%(api_host)s:%(api_port)s" % cfg)
+    apiclient = api_client.ApiClient(cfg['api_host'], cfg['api_port'])
+    api_socket = apiclient.socket
+#    api_socket = context.socket(zmq.REQ)
+#    api_socket.connect("tcp://%(api_host)s:%(api_port)s" % cfg)
     
     if len(sys.argv) == 4:
         row_id, cf_str, scf_str = sys.argv[1], sys.argv[2], sys.argv[3]
@@ -110,10 +134,22 @@ def main():
             show_result2(rs, row_id, cf_str, scf_str)
         return
     elif len(sys.argv) == 8:
-        rs = api_client.invoke_statistics(api_socket, sys.argv[1], sys.argv[2], sys.argv[3],sys.argv[4], sys.argv[5], sys.argv[6], sys.argv[7])
+        row_id, cf_str, scf_str = sys.argv[1], sys.argv[2], sys.argv[3]
+        statistic, period = int(sys.argv[4]), int(sys.argv[5])
+        time_from, time_to = int(sys.argv[6]), int(sys.argv[7])
+        apiclient.set_param(row_id, cf_str, scf_str, statistic, period, time_from, time_to)
+        rs = apiclient.get_result(statistic)
+        show_result4(rs, row_id, cf_str, scf_str, statistic, time_from, time_to)
+#        rs = api_client.invoke_statistics(api_socket, sys.argv[1], sys.argv[2], sys.argv[3],sys.argv[4], sys.argv[5], sys.argv[6], sys.argv[7])
         return
     elif len(sys.argv) == 7:
-        rs = api_client.invoke_statistics(api_socket, sys.argv[1], sys.argv[2], sys.argv[3],sys.argv[4], sys.argv[5], sys.argv[6], '0')
+        row_id, cf_str, scf_str = sys.argv[1], sys.argv[2], sys.argv[3]
+        statistic, period = int(sys.argv[4]), int(sys.argv[5])
+        time_from, time_to = int(sys.argv[6]), 0
+        apiclient.set_param(row_id, cf_str, scf_str, statistic, period, time_from, time_to)
+        rs = apiclient.get_result(statistic)
+        show_result4(rs, row_id, cf_str, scf_str, statistic, time_from, time_to)
+#        rs = api_client.invoke_statistics(api_socket, sys.argv[1], sys.argv[2], sys.argv[3],sys.argv[4], sys.argv[5], sys.argv[6], '0')
         return
 
     

@@ -120,6 +120,14 @@ class ApiClient():
         self.context = zmq.Context()
         self.socket = self.context.socket(zmq.REQ)
         self.socket.connect("tcp://%s:%s" % (api_host, api_port))
+    def set_param(self, key=u'', cf_str=u'', scf_str=u'', statistic=0, period=5, time_from=0, time_to=0):
+        self.cf_str = cf_str
+        self.scf_str = scf_str
+        self.statistic = statistic
+        self.period = period
+        self.time_from = time_from
+        self.time_to = time_to
+        self.key = key
     def invoke(self):
         param = ['S', self.key, self.cf_str, self.scf_str, int(self.statistic), int(self.period), int(self.time_from), int(self.time_to)]
         r = invoke(self.socket, param)
@@ -140,6 +148,10 @@ class ApiClient():
         self.period = STATISTIC.AVERAGE
         r = self.invoke()
         return None if r is None else r.values()[0]
+    def get_result(self, s):
+        self.statistic = s
+        r = self.invoke()
+        return r
     def getbykey(self, key, cf_str=None, scf_str=None):
         if cf_str is None or scf_str is None:
             return invoke_getbykey(self.socket, key)
