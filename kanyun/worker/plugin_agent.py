@@ -1,7 +1,23 @@
 #!/usr/bin/env python
 # encoding: utf-8
-# TAB char: space
-# Last update: Peng Yuwei<yuwei5@staff.sina.com.cn> 2012-3-28
+# TAB char: space[4]
+# Last update: Yuwei Peng<yuwei5@staff.sina.com.cn> 2012-3-28
+
+# Copyright 2012 Sina Corporation
+# All Rights Reserved.
+# Author: YuWei Peng <pengyuwei@gmail.com>
+#
+#    Licensed under the Apache License, Version 2.0 (the "License"); you may
+#    not use this file except in compliance with the License. You may obtain
+#    a copy of the License at
+#
+#         http://www.apache.org/licenses/LICENSE-2.0
+#
+#    Unless required by applicable law or agreed to in writing, software
+#    distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+#    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+#    License for the specific language governing permissions and limitations
+#    under the License.
 
 import datetime
 import time
@@ -114,6 +130,7 @@ class LibvirtMonitor(object):
         """
         (dom_run_state, dom_max_mem_kb, dom_memory_kb,
          dom_nr_virt_cpu, dom_cpu_time) = dom_conn.info()
+        mem_free = dom_max_mem_kb - dom_memory_kb
         if not dom_run_state:
             # TODO(lzyeval): handle exception
             pass
@@ -125,12 +142,12 @@ class LibvirtMonitor(object):
         #%CPU = 100 * cpu_time_diff / (t * nr_cores * 10^9)
         #print "%d * %f / (%d * 1 * %d)" % (100.0, self.diffs[dom_id].get_diff(), self.diffs[dom_id].get_time_pass(), 1e9)
         cpu = 100.0 * self.diffs[dom_id].get_diff() / (self.diffs[dom_id].get_time_pass() * 1 * 1e9)
-        print dom_id, 'cpu usage:', cpu, '%, cpu_time:', dom_cpu_time, "mem:", dom_memory_kb, "/", dom_max_mem_kb
+        print dom_id, 'cpu usage:', cpu, '%, cpu_time:', dom_cpu_time, "mem:", mem_free, "/", dom_max_mem_kb
         # NOTE(lzyeval): libvirt currently can only see total of all vcpu time
 #        return [('cpu', 'total', (timestamp, dom_cpu_time)),
 #                ('mem', 'total', (timestamp, dom_max_mem_kb, dom_memory_kb))]
         return [('cpu', 'total', (timestamp, cpu)),
-                ('mem', 'total', (timestamp, dom_max_mem_kb, dom_memory_kb))]
+                ('mem', 'total', (timestamp, dom_max_mem_kb, mem_free))]
 
     def _collect_nic_dev_info(self, dom_conn, nic_dev):
         """Returns tuple of
