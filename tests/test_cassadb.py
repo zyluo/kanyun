@@ -1,6 +1,4 @@
-#!/usr/bin/env python
-# encoding: utf-8
-# TAB char: space[4]
+# vim: tabstop=4 shiftwidth=4 softtabstop=4
 #
 # Copyright 2012 Sina Corporation
 # All Rights Reserved.
@@ -33,7 +31,8 @@ class cassadbMox():
     def get_range(self, cf_str):
         pass
         
-    def get(self, cf_str, key, super_column, column_start, column_finish, column_count = 20000):
+    def get(self, cf_str, key, super_column, column_start,
+            column_finish, column_count = 20000):
         pass
         
     def getbykey(self, cf_str, key):
@@ -71,7 +70,9 @@ class CassaDBTest(unittest.TestCase):
         
         pool = pycassa.ConnectionPool('data', server_list=['127.0.0.1'])
         cf = pycassa.ColumnFamily(pool, cf_str)
-        rs = cf.get(key=key, super_column=super_column, column_start=column_start, column_finish=column_finish, column_reversed=True, column_count=column_count)
+        rs = cf.get(key=key, super_column=super_column, 
+                    column_start=column_start, column_finish=column_finish,
+                    column_reversed=True, column_count=column_count)
         print rs
 
 

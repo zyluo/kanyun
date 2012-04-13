@@ -1,6 +1,4 @@
-#!/usr/bin/env python
-# encoding: utf-8
-# TAB char: space[4]
+# vim: tabstop=4 shiftwidth=4 softtabstop=4
 #
 # Copyright 2012 Sina Corporation
 # All Rights Reserved.
@@ -26,7 +24,6 @@ import zmq
 
 from kanyun.common.const import *
 
-# Last update: Yuwei Peng<yuwei5@staff.sina.com.cn> 2012-4-5
 
 """
 protocol:

@@ -1,8 +1,4 @@
-#!/usr/bin/env python
-# encoding: utf-8
-# TAB char: space[4]
-#
-# Last update: Yuwei Peng<yuwei5@staff.sina.com.cn> 2012-3-28
+# vim: tabstop=4 shiftwidth=4 softtabstop=4
 #
 # Copyright 2012 Sina Corporation
 # All Rights Reserved.
@@ -137,11 +133,11 @@ def api_getdata(row_id, cf_str, scf_str, time_from=0, time_to=0):
     param type: UnicodeType and IntType
     return: recordset, count, bool(count > limit?)
     """
-    if not type(row_id) is types.UnicodeType \
-        or not type(cf_str) is types.UnicodeType \
-        or not type(scf_str) is types.UnicodeType \
-        or not type(time_from) is types.IntType \
-        or not type(time_to) is types.IntType:
+    if not isinstanceof(row_id, unicode)
+        or not isinstanceof(cf_str, unicode)
+        or not isinstanceof(scf_str, unicode)
+        or not isinstanceof(time_from, int)
+        or not isinstanceof(time_to, int):
         return None, 0, True
         
     db = get_db()
@@ -149,7 +145,8 @@ def api_getdata(row_id, cf_str, scf_str, time_from=0, time_to=0):
     if time_to == 0:
         time_to = time.time()
     
-    rs = db.get(cf_str, row_id, super_column=scf_str, column_start=time_from, column_finish=time_to, column_count=20000)
+    rs = db.get(cf_str, row_id, super_column=scf_str, 
+            column_start=time_from, column_finish=time_to, column_count=20000)
     count = 0 if rs is None else len(rs)
     
     return rs, count, False if (count == 20000) else True
@@ -159,7 +156,9 @@ def analyize_data(rs, period, statistic):
     """[private func]analyize the data
     period: minutes
     """
-    if rs is None or not type(period) is types.IntType or not type(statistic) is types.IntType:
+    if rs is None 
+        or not isinstanceof(period, int)
+        or not isinstanceof(statistic, int):
         return None
     t = 0
     key_time = 0
@@ -168,7 +167,8 @@ def analyize_data(rs, period, statistic):
     
     for timestmp, value in rs.iteritems():
         rt = time.gmtime(timestmp)
-        key = rt.tm_min + rt.tm_hour*100 + rt.tm_mday*10000 + rt.tm_mon*1000000 + rt.tm_year*100000000
+        key = rt.tm_min + rt.tm_hour*100 + rt.tm_mday*10000 + \
+              rt.tm_mon*1000000 + rt.tm_year*100000000
         if t == 0:
             print '\tget first value'
             st.clean()
@@ -180,7 +180,9 @@ def analyize_data(rs, period, statistic):
             t = timestmp
             key_time = time.gmtime(timestmp)
         st.update(float(value))
-        key2 = time.mktime((key_time.tm_year, key_time.tm_mon, key_time.tm_mday, key_time.tm_hour, key_time.tm_min,0,0,0,0))
+        key2 = time.mktime(
+                          (key_time.tm_year, key_time.tm_mon, key_time.tm_mday,
+                          key_time.tm_hour, key_time.tm_min,0,0,0,0))
         this_period[key2] = st.get_value(statistic)
         print '\tcompute time=%d, value=%s(%f) "update(%s)=%d"' % \
                 (key, value, float(value), key2, this_period[key2])
@@ -189,15 +191,16 @@ def analyize_data(rs, period, statistic):
     print statistic, ":each period(", period, "):"
     for m, val in this_period.iteritems():
         rt = time.gmtime(m)
-        key = rt.tm_min + rt.tm_hour*100 + rt.tm_mday*10000 + rt.tm_mon*1000000 + rt.tm_year*100000000
+        key = rt.tm_min + rt.tm_hour*100 + rt.tm_mday*10000 + \
+              rt.tm_mon*1000000 + rt.tm_year*100000000
         print '\t', key, m, val
         
     return this_period
 
 
-############################# public API interface #############################
+############################# public API interface ############################
 def api_get_instances_list(cf_str):
-    if not type(cf_str) is types.UnicodeType:
+    if not isinstanceof(cf_str) is types.UnicodeType:
         print 'param types error'
         return None
     ret = list()
@@ -215,8 +218,8 @@ def api_get_instances_list(cf_str):
     
     
 def api_get_by_instance_id(row_id, cf_str):
-    if not type(row_id) is types.UnicodeType \
-        or not type(cf_str) is types.UnicodeType:
+    if not isinstanceof(row_id, unicode)
+        or not isinstanceof(cf_str) is types.UnicodeType:
         print 'param types error'
         return None, 0, True
     db = get_db()
@@ -231,10 +234,10 @@ def api_getbykey(row_id, cf_str, scf_str, limit=20000):
     example:cf=u'vmnetwork',scf=u'10.0.0.1',key=u'instance-0000002'
     return: recordset, count, bool(count > limit?)
     """
-    if not type(row_id) is types.UnicodeType \
-        or not type(cf_str) is types.UnicodeType \
-        or not type(scf_str) is types.UnicodeType \
-        or not type(limit) is types.IntType:
+    if not isinstanceof(row_id, unicode)
+        or not isinstanceof(cf_str, unicode)
+        or not isinstanceof(scf_str, unicode)
+        or not isinstanceof(limit, int):
         print 'param types error'
         return None, 0, True
     db = get_db()
@@ -244,22 +247,24 @@ def api_getbykey(row_id, cf_str, scf_str, limit=20000):
     return rs, count, False if (count == 20000) else True
 
 
-def api_statistic(row_id, cf_str, scf_str, statistic, period=5, time_from=0, time_to=0):
+def api_statistic(row_id, cf_str, scf_str, 
+                  statistic, period=5, time_from=0, time_to=0):
     """statistic is STATISTIC enum
     period default=5 minutes
     time_to default=0(now)"""
-    if not type(row_id) is types.UnicodeType \
-        or not type(cf_str) is types.UnicodeType \
-        or not type(scf_str) is types.UnicodeType \
-        or not type(statistic) is types.IntType \
-        or not type(period) is types.IntType \
-        or not type(time_from) is types.IntType \
-        or not type(time_to) is types.IntType:
+    if (not isinstanceof(row_id, unicode)
+        or not isinstanceof(cf_str, unicode)
+        or not isinstanceof(scf_str, unicode)
+        or not isinstanceof(statistic, int)
+        or not isinstanceof(period, int)
+        or not isinstanceof(time_from, int)
+        or not isinstanceof(time_to, int)):
         print 'param types error'
         return None, 0, True
         
     ret_len = 0
-    rs, count, all_data = api_getdata(row_id, cf_str, scf_str, time_from, time_to)
+    rs, count, all_data = api_getdata(row_id, cf_str, scf_str, 
+                                      time_from, time_to)
     if not rs is None and count > 0:
         buf = analyize_data(rs, 1, statistic)
         ret = analyize_data(buf, period, statistic)

@@ -1,7 +1,4 @@
-#!/usr/bin/env python
-# encoding: utf-8
-# TAB char: space[4]
-# Last update: Yuwei Peng<yuwei5@staff.sina.com.cn> 2012-3-28
+# vim: tabstop=4 shiftwidth=4 softtabstop=4
 
 # Copyright 2012 Sina Corporation
 # All Rights Reserved.

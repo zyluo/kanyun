@@ -1,6 +1,4 @@
-#!/usr/bin/env python
-# encoding: utf-8
-# TAB char: space[4]
+# vim: tabstop=4 shiftwidth=4 softtabstop=4
 #
 # Copyright 2012 Sina Corporation
 # All Rights Reserved.
@@ -175,7 +173,8 @@ class WorkerIntegrationTest():
                 sys.stdout.flush()
                 time.sleep(1)
             now = time.localtime()
-            print '\n%02d:%02d:%02d working success finished.' % (now[3], now[4], now[5])
+            print '\n%02d:%02d:%02d working success finished.' % \
+                  (now[3], now[4], now[5])
             w.update_time()
             
             #if only test the first working timepoint, break here.
