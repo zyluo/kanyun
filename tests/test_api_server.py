@@ -97,9 +97,9 @@ class TestApiServer(unittest.TestCase):
         statistic = None
         rs1, count, _ = api_server.api_statistic(None, None, None, None, period=5, time_from=0, time_to=0)
         rs2, count, _ = api_server.api_getbykey(None, cf_str, scf_str, limit=20000)
-        rs3, count, _ = api_server.api_getbyInstanceID(row_id, cf_str)
+        rs3, count, _ = api_server.api_get_by_instance_id(row_id, cf_str)
         rs4, count, _ = api_server.api_getdata(row_id, cf_str, scf_str, time_from=0, time_to=0)
-        rs5 = api_server.api_getInstancesList(None)
+        rs5 = api_server.api_get_instances_list(None)
         rs6 = api_server.analyize_data(None, period, statistic)
         assert(rs1 is None)
         assert(rs2 is None)

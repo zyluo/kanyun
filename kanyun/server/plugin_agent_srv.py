@@ -42,7 +42,7 @@ def get_cf_str(cf_str):
     """
     [('cpu', 'total', (utc_time, cpu_usage)), 
     ('mem', 'total', (utc_time, max, free)), 
-    ('nic', 'vnet8', (utc_time, incoming, outgoing(内网))), 
+    ('nic', 'vnet8', (utc_time, incoming, outgoing())), 
     ('blk', 'vda', (utc_time, read, write)), 
     ('blk', 'vdb', (utc_time, read, write))],
     """

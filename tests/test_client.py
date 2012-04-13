@@ -17,7 +17,7 @@
 #    under the License.
 
 import time
-from kanyun.server.api_client import ApiClient
+from kanyun.client.api_client import ApiClient
 
 
 if __name__ == '__main__':

@@ -18,7 +18,7 @@
 
 import time
 
-import plugin_agent
+import kanyun.worker.plugin_agent as plugin_agent
 
 """
 CPU Calculation

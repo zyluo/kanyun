@@ -61,6 +61,7 @@ class CassaDBTest(unittest.TestCase):
         column_count = 0
 
     def GetTest(self):
+        import pycassa
         cf_str = "cpu"
         key = "instance-00000001@pyw.novalocal"
         super_column = 'total'

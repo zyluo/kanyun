@@ -33,7 +33,7 @@ Save the vm's system info data to db.
 
 protocol:
     http://wiki.sinaapp.com/doku.php?id=monitoring
-[u'S', u'instance-00000001@pyw.novalocal', u'cpu', u'total', 0, 5, 1332897600, 0]
+[u'S', u'instance-000001@pyw.novalocal', u'cpu', u'total', 0, 5, 1332897600, 0]
 """
 
 logger = logging.getLogger()
@@ -133,11 +133,11 @@ def api_getdata(row_id, cf_str, scf_str, time_from=0, time_to=0):
     param type: UnicodeType and IntType
     return: recordset, count, bool(count > limit?)
     """
-    if not isinstanceof(row_id, unicode)
-        or not isinstanceof(cf_str, unicode)
-        or not isinstanceof(scf_str, unicode)
-        or not isinstanceof(time_from, int)
-        or not isinstanceof(time_to, int):
+    if not isinstance(row_id, unicode) \
+        or not isinstance(cf_str, unicode) \
+        or not isinstance(scf_str, unicode) \
+        or not isinstance(time_from, int) \
+        or not isinstance(time_to, int):
         return None, 0, True
         
     db = get_db()
@@ -156,9 +156,9 @@ def analyize_data(rs, period, statistic):
     """[private func]analyize the data
     period: minutes
     """
-    if rs is None 
-        or not isinstanceof(period, int)
-        or not isinstanceof(statistic, int):
+    if rs is None \
+        or not isinstance(period, int) \
+        or not isinstance(statistic, int):
         return None
     t = 0
     key_time = 0
@@ -200,7 +200,7 @@ def analyize_data(rs, period, statistic):
 
 ############################# public API interface ############################
 def api_get_instances_list(cf_str):
-    if not isinstanceof(cf_str) is types.UnicodeType:
+    if not isinstance(cf_str, unicode):
         print 'param types error'
         return None
     ret = list()
@@ -218,8 +218,8 @@ def api_get_instances_list(cf_str):
     
     
 def api_get_by_instance_id(row_id, cf_str):
-    if not isinstanceof(row_id, unicode)
-        or not isinstanceof(cf_str) is types.UnicodeType:
+    if not isinstance(row_id, unicode) \
+        or not isinstance(cf_str, unicode):
         print 'param types error'
         return None, 0, True
     db = get_db()
@@ -234,10 +234,10 @@ def api_getbykey(row_id, cf_str, scf_str, limit=20000):
     example:cf=u'vmnetwork',scf=u'10.0.0.1',key=u'instance-0000002'
     return: recordset, count, bool(count > limit?)
     """
-    if not isinstanceof(row_id, unicode)
-        or not isinstanceof(cf_str, unicode)
-        or not isinstanceof(scf_str, unicode)
-        or not isinstanceof(limit, int):
+    if not isinstance(row_id, unicode) \
+        or not isinstance(cf_str, unicode) \
+        or not isinstance(scf_str, unicode) \
+        or not isinstance(limit, int):
         print 'param types error'
         return None, 0, True
     db = get_db()
@@ -252,13 +252,13 @@ def api_statistic(row_id, cf_str, scf_str,
     """statistic is STATISTIC enum
     period default=5 minutes
     time_to default=0(now)"""
-    if (not isinstanceof(row_id, unicode)
-        or not isinstanceof(cf_str, unicode)
-        or not isinstanceof(scf_str, unicode)
-        or not isinstanceof(statistic, int)
-        or not isinstanceof(period, int)
-        or not isinstanceof(time_from, int)
-        or not isinstanceof(time_to, int)):
+    if (not isinstance(row_id, unicode) \
+        or not isinstance(cf_str, unicode) \
+        or not isinstance(scf_str, unicode) \
+        or not isinstance(statistic, int) \
+        or not isinstance(period, int) \
+        or not isinstance(time_from, int) \
+        or not isinstance(time_to, int)):
         print 'param types error'
         return None, 0, True
         
@@ -280,5 +280,5 @@ def api_statistic(row_id, cf_str, scf_str,
         ret_len = 0
     return ret, ret_len, all_data
 
-########################## end public API interface #############################
+######################### end public API interface ############################
 

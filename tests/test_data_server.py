@@ -41,6 +41,7 @@ class TestLivingStatus(unittest.TestCase):
         print 'living'
         ls.update()
         self.assertTrue(not ls.is_die())
+        ls.dietv = 5
         while not ls.is_die():
             now = time.localtime()
             sys.stdout.write("\r%02d:%02d:%02d waitting for die" % 
@@ -48,12 +49,13 @@ class TestLivingStatus(unittest.TestCase):
             sys.stdout.flush()
             time.sleep(1)
         print
-        print 'first event:'
         ret = ls.on_die()
+        print 'first event:', ret
         self.assertTrue(ret == 2)
-        print 'next event:'
+        
         ret = ls.on_die()
-        self.assertTrue(ret == 1)
+        print 'next event:', ret
+        self.assertTrue(ret == 0)
         print "LivingStatus test \t[\033[1;33mOK\033[0m]"
     
     

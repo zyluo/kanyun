@@ -45,7 +45,8 @@ logger.setLevel(logging.NOTSET)
 class LivingStatus():
 
     def __init__(self, worker_id = '1'):
-        self.min = 2 # 2min
+        self.dietv = 2 * 60  # default die threshold value: 2min
+        self.alert_interval = 60 # one alert every 60 seconds
         self.update()
         self.alerted = False
         self.worker_id = worker_id
@@ -56,7 +57,7 @@ class LivingStatus():
         self.alerted = False
         
     def is_die(self):
-        return time.time() - self.update_time > self.min * 60 
+        return time.time() - self.update_time > self.dietv
         
     def on_die(self):
         ret = 0
@@ -65,7 +66,7 @@ class LivingStatus():
             ret += 1
             
         # each minutes less than once
-        if time.time() - self.previous_alert_time > 60: 
+        if time.time() - self.previous_alert_time > self.alert_interval: 
             self.alert()
             ret += 1
             
