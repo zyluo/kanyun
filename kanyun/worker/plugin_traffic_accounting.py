@@ -31,9 +31,9 @@ mock:
      On compute node:
       iptables -t filter -N nova-compute-f-inst-$instance_id
       iptables -I FORWARD -s $instance_ip -j nova-compute-f-inst-$instance_id
-      iptables -A nova-compute-f-inst-$instance_id -o $public_interface -s \
-                        $instance_ip -m comment \
-                        --comment " $instance_id $instance_ip accounting rule "
+      iptables -A nova-compute-f-inst-$instance_id -o $public_interface \
+                     -m comment \
+                     --comment " $instance_id $instance_ip accounting rule "
 
       iptables -t filter -N nova-compute-f-inst-112
       iptables -I FORWARD -s 10.0.0.3 -j nova-compute-f-inst-112
