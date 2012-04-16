@@ -26,7 +26,7 @@ class MSG_TYPE:
     AGENT = '3'
     
 class STATISTIC:
-    SUM     = 0
+    SUM = 0
     MAXIMUM = 1
     MINIMUM = 2
     AVERAGE = 3

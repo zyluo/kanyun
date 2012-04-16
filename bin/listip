@@ -39,6 +39,7 @@ def list_instance_ip():
         line = i.split()
         if len(line) < 3:
             continue
+        instance_name = line[1]
         instance_id = line[1][-6:]
         instance_id = str(int(instance_id, 16))
         if utils.is_uuid_like(instance_id):
@@ -50,8 +51,8 @@ def list_instance_ip():
 
         fixed_ips_info = db.fixed_ip_get_by_instance(admin_ctxt, instance_id)
         for info in fixed_ips_info:
-            print line[1], info['address']
-            ret[line[1]] = info['address']
+            print instance_id, line[1], info['address']
+            ret[instance_id] = (line[1], info['address'])
             break
     print len(ret), 'instances.'
 
@@ -70,8 +71,16 @@ def main():
             print
             return
 
-    cmd1 = """sudo iptables -t raw -A PREROUTING -s %s -m comment --comment '%s'"""
-    cmd2 = """sudo iptables -t raw -I PREROUTING -s %s -m comment --comment '%s'"""
+#      iptables -t filter -N nova-compute-f-inst-$instance_id
+#      iptables -I FORWARD -s $instance_ip -j nova-compute-f-inst-$instance_id
+#      iptables -A nova-compute-f-inst-$instance_id -o $public_interface \
+#                     -m comment \
+#                     --comment " $instance_id $instance_ip accounting rule "
+                     
+    cmd1 = """iptables -t filter -N nova-compute-f-inst-%s"""
+    cmd2 = """iptables -I FORWARD -s %s -j nova-compute-f-inst-%s"""
+    cmd3 = """iptables -A nova-compute-f-inst-%s -o %s -m comment --comment"""
+           """ %s %s accounting rule """
     utils.default_flagfile()
     try:
         flags.FLAGS(sys.argv[:2])
@@ -82,15 +91,23 @@ def main():
     ret = list_instance_ip()
     has_error = False
     if setup:
-        for k, i in ret.iteritems():
-            cmd = cmd1 % (i, k)
+        for k, (n, ip) in ret.iteritems():
+            cmd = cmd1 % (k)
             try:
                 os.system(cmd)
             except:
                 has_error = True
                 print cmd
                 
-            cmd = cmd2 % (i, k)
+            cmd = cmd2 % (ip, k)
+            try:
+                os.system(cmd)
+            except:
+                has_error = True
+                print cmd
+                traceback.print_stack()
+                
+            cmd = cmd3 % (k, 'br100', k, ip)
             try:
                 os.system(cmd)
             except:
@@ -100,7 +117,7 @@ def main():
         if has_error: 
             print 'Auto set iptables policy failed.'
         else:
-            print "Use 'sudo iptables -L -n' to look the policy."
+            print "Use 'sudo iptables -n -L' to look the policy."
         
         
 if __name__ == '__main__':

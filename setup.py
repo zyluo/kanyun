@@ -27,7 +27,8 @@ setup(
     name = "kanyun",
     version = "0.1",
 #    package_dir = {'':'monitoring'},   # tell distutils packages are under src
-    packages = ['kanyun',
+    packages = ['bin',
+            'kanyun',
             'kanyun.common',
             'kanyun.database',
             'kanyun.server',
@@ -41,6 +42,7 @@ setup(
         # If any package contains *.txt or *.rst files, include them:
         '': ['*.txt', '*.rst'],
         # And include any *.msg files found in the 'hello' package, too:
+        'bin': ['*.conf'],
         'worker': ['*.conf'],
         'server': ['*.conf'],
     },
@@ -51,7 +53,7 @@ setup(
     description = "OpenStack Monitoring System",
     long_description = "OpenStack Monitoring System",
     license = 'Apache',
-    keywords = "vm openstack monitor",
+    keywords = "vm openstack monitor kanyun",
     url = "https://git.sws.sina.com.cn/pyw_code/pyw_code",   # project home page, if any
     classifiers = [
         'Development Status :: 4 - Beta',

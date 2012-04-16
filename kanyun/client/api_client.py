@@ -77,7 +77,8 @@ def invoke_getbykey(socket, row_id):
     return ret
     
     
-def invoke_statistics(api_client, row_id, cf_str, scf_str, statistic, period=5, time_from=0, time_to=0):
+def invoke_statistics(api_client, row_id, cf_str, scf_str, 
+                      statistic, period=5, time_from=0, time_to=0):
     #param_tmpl = ['S', 'instance-00000001@pyw.novalocal', 'cpu', 'total', 0, 5, 1332897600, 0]
     #  Do 10 requests, waiting each time for a response
     for request in range (1,2):
@@ -111,7 +112,7 @@ def invoke_statistics(api_client, row_id, cf_str, scf_str, statistic, period=5, 
 
 class ApiClient():
 
-    def __init__(self, api_host = '127.0.0.1', api_port = '5556'):
+    def __init__(self, api_host='127.0.0.1', api_port='5556'):
         # default value
         self.cf_str = u''
         self.scf_str = u''
@@ -125,7 +126,8 @@ class ApiClient():
         self.socket = self.context.socket(zmq.REQ)
         self.socket.connect("tcp://%s:%s" % (api_host, api_port))
         
-    def set_param(self, key=u'', cf_str=u'', scf_str=u'', statistic=0, period=5, time_from=0, time_to=0):
+    def set_param(self, key=u'', cf_str=u'', scf_str=u'', 
+                  statistic=0, period=5, time_from=0, time_to=0):
         self.cf_str = cf_str
         self.scf_str = scf_str
         self.statistic = statistic

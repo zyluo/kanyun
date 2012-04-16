@@ -32,7 +32,7 @@ protocol:
 """
 
 # plugin
-def plugin_heartbeat(worker_id, status = 1):
+def plugin_heartbeat(worker_id, status=1):
     """status: 0:I will exit; 1:working"""
     info = [worker_id, time.time(), status]
     return MSG_TYPE.HEART_BEAT, info
@@ -72,7 +72,8 @@ class Worker:
     # before the first run ,the rate is 1000(milliseconds). after the first run, rate is 5000(milliseconds)
     working_rate = 1000
     
-    def __init__(self, context = None, feedback_host='127.0.0.1', feedback_port=5559, logger = None, worker_id = 'Black'):
+    def __init__(self, context=None, feedback_host='127.0.0.1', 
+                 feedback_port=5559, logger=None, worker_id='Black'):
         """ context is zeroMQ socket context"""
         self.plugins = list()
         self.last_work_min = None # this value is None until first update
@@ -92,7 +93,7 @@ class Worker:
         self.plugins = list()
         
     def register_plugin(self, plugin):
-        self.plugins.append(plugin)
+        self.plugins.append(plugin, True)
     
     def update_time(self):
         """[private]save the current time.First update will between 0-5(sec) in current minutes"""
@@ -108,7 +109,7 @@ class Worker:
             
     def send(self, msg):
         """PUSH the msg(msg is a list)"""
-        self.logger.debug( 'send:%s' % msg )
+        self.logger.debug('send:%s' % msg)
         self.feedback.send_multipart(msg)
     
     def get_leaving_time(self):
@@ -134,15 +135,16 @@ class Worker:
         if not self.is_timeto_work():
             return False
         now = time.localtime()
-        self.logger.debug( '%02d:%02d:%02d working...' % (now[3], now[4], now[5]) )
+        self.logger.debug('%02d:%02d:%02d working...' % (now[3], now[4], now[5]))
 
-        for plugin in self.plugins:
+        for plugin, enable in self.plugins:
             try:
                 msg_type, info = plugin(self.worker_id)
                 if (not info is None) and len(info) > 0:
                     self.send([msg_type, json.dumps(info)])
             except:
                 traceback.print_exc()
+                enable = False
         
         self.update_time()
         return True

@@ -20,7 +20,7 @@ import pycassa
 
 class CassaDb():
 
-    def __init__(self, keyspace = 'data', ip = '127.0.0.1'):
+    def __init__(self, keyspace='data', ip='127.0.0.1'):
         """
         # self.cfs:
         # ColumnFamilys object collection
@@ -54,7 +54,8 @@ class CassaDb():
             
         return rs
     
-    def get(self, cf_str, key, super_column, column_start, column_finish, column_count = 20000):
+    def get(self, cf_str, key, super_column, 
+            column_start, column_finish, column_count = 20000):
         """get(key[, columns][, column_start][, column_finish][, column_count]
         [, column_reversed][, include_timestamp][, super_column][, read_consistency_level])
         """

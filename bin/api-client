@@ -48,7 +48,8 @@ def show_result3(rs, row_id):
     print "%d results of key=%s" % (len(rs), row_id)
     
     
-def show_result4(rs, row_id='', cf_str='', scf_str='', statistic=0, time_from=0, time_to=0):
+def show_result4(rs, row_id='', cf_str='', scf_str='', 
+                 statistic=0, time_from=0, time_to=0):
     strs = "Result"
     if const.statistic_str.has_key(statistic):
         strs = const.statistic_str[statistic]

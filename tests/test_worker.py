@@ -102,7 +102,7 @@ class WorkerTest(unittest.TestCase):
         t = time.gmtime(time.mktime((2012, 10, 1, 15, 26,40,0,0,0)))
         w.last_work_min = None
         istime = False
-        while istime == False:
+        while not istime:
             now = time.localtime()
             istime = w.is_timeto_work()
             if not istime:
