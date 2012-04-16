@@ -29,12 +29,18 @@ cf.insert('10.0.0.2', {u'usage': {1332389700: '12'}})
 mock:
   for testing only:
      On compute node:
-        iptables -A FORWARD -o $public_interface -s $instance_ip -m comment \
-                         --comment " $instance_id $instance_ip accounting rule "
-        iptables -A FORWARD -o eth0 -s 10.0.0.3 -m comment \
+      iptables -t filter -N nova-compute-f-inst-$instance_id
+      iptables -I FORWARD -s $instance_ip -j nova-compute-f-inst-$instance_id
+      iptables -A nova-compute-f-inst-$instance_id -o $public_interface -s \
+                        $instance_ip -m comment \
+                        --comment " $instance_id $instance_ip accounting rule "
+
+      iptables -t filter -N nova-compute-f-inst-112
+      iptables -I FORWARD -s 10.0.0.3 -j nova-compute-f-inst-112
+      iptables -A nova-compute-f-inst-112 -o eth0 -m comment \
                          --comment " 112 10.0.0.3 accounting rule "
      On load balancer node:
-        # TODO(wenjianhn)
+      # TODO(wenjianhn)
 """
 
 def get_hostname():
