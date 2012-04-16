@@ -26,10 +26,15 @@ Protocol format:
 {'10.0.0.2': {'11111': '12'}, '10.0.0.3': {'11122': '45'}}
 cf.insert('10.0.0.2', {u'usage': {1332389700: '12'}})
 
-request:
-sudo iptables -t raw -A PREROUTING -s $instance_ip -m comment --comment "instance_id"
-sudo iptables -t raw -I PREROUTING -s 10.0.0.3 -m comment --comment "instance-0000003e"
-
+mock:
+  for testing only:
+     On compute node:
+        iptables -A FORWARD -o $public_interface -s $instance_ip -m comment \
+                         --comment " $instance_id $instance_ip accounting rule "
+        iptables -A FORWARD -o eth0 -s 10.0.0.3 -m comment \
+                         --comment " 112 10.0.0.3 accounting rule "
+     On load balancer node:
+        # TODO(wenjianhn)
 """
 
 def get_hostname():
@@ -43,27 +48,30 @@ def get_hostname():
     return ret
     
 _ip_bytes = {} # {'10.0.0.2': '10', '10.0.0.3': '5'}
-CMD = "sudo iptables -t raw -nvxL PREROUTING"
+CMD = "iptables-save -t filter -c"
 hostname = get_hostname()
 
 def get_traffic_accounting_info():
     """
     return value format example:
-    {'instance-00000001': ('10.0.0.2', 1332409327, '0')}
+    {'116@swsdevp': ('10.0.0.95', 1334555143, '0')}
     """
     
-    records = subprocess.check_output(shlex.split(CMD), stderr=subprocess.STDOUT)
+    records = subprocess.check_output(shlex.split(CMD),
+                                      stderr=subprocess.STDOUT)
     lines = records.splitlines()[2:]
+    acct_records = [line for line in lines if "accounting rule" in line]
+    
     ret = {}
-   
-    for line in lines:
-        counter_info = line.split()
-#        print "line:", line, "counter_info:", counter_info
-        out_bytes = counter_info[1]
-        instance_ip = counter_info[6]
-        instance_id = counter_info[9] + hostname
+
+    for record in acct_records:
+        out_bytes = record.split()[0].partition(':')[2][0:-1]
+        instance_id = record.split()[9] + hostname
+        instance_ip = record.split()[10]
+
         val = int(out_bytes)
 
+        global _ip_bytes
         if instance_id in _ip_bytes:
             prev_out_bytes = _ip_bytes[instance_id]
             val = int(out_bytes) - prev_out_bytes
@@ -81,6 +89,8 @@ def get_traffic_accounting_info():
 
 if __name__=='__main__':
     while True:
-        print get_traffic_accounting_info()
+        for info in get_traffic_accounting_info().iteritems():
+            print info
+
         import time
         time.sleep(2)
