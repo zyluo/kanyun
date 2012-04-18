@@ -59,6 +59,7 @@ class CassaDb():
         """get(key[, columns][, column_start][, column_finish][, column_count]
         [, column_reversed][, include_timestamp][, super_column][, read_consistency_level])
         """
+        # column_start, column_finish must be IntType
         rs = None
         cf = self.get_cf(cf_str)
         if cf is None or key is None or super_column is None or column_start is None or column_finish is None:

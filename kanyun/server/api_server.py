@@ -36,10 +36,10 @@ protocol:
 [u'S', u'instance-000001@pyw.novalocal', u'cpu', u'total', 0, 5, 1332897600, 0]
 """
 
-logger = logging.getLogger()
-handler = logging.FileHandler("/tmp/api-server.log")
-logger.addHandler(handler)
-logger.setLevel(logging.NOTSET)
+#logger = logging.getLogger()
+#handler = logging.FileHandler("/tmp/api-server.log")
+#logger.addHandler(handler)
+#logger.setLevel(logging.NOTSET)
             
 
 class Statistics():
@@ -110,175 +110,343 @@ class Statistics():
         return 0;
 
 
-"""cassandra database object"""
-db = None
-"""
-# ColumnFamilys object collection
-# data format: {key: ColumnFamily Object}
-# example: {'cpu', ColumnFamily()}
-"""
+class ApiServer():
 
-def get_db():
-    global db
-    if db is None:
-        config = ConfigParser.ConfigParser()
-        config.read("kanyun.conf")
-        api_cfg = dict(config.items('api'))
-        db = CassaDb('data', api_cfg['db_host'])
-    return db
-    
-    
-def api_getdata(row_id, cf_str, scf_str, time_from=0, time_to=0):
-    """
-    param type: UnicodeType and IntType
-    return: recordset, count, bool(count > limit?)
-    """
-    if not isinstance(row_id, unicode) \
-        or not isinstance(cf_str, unicode) \
-        or not isinstance(scf_str, unicode) \
-        or not isinstance(time_from, int) \
-        or not isinstance(time_to, int):
-        return None, 0, True
+    def __init__(self, 
+                 db_host='127.0.0.1', 
+                 log_file="/tmp/api-server.log",
+                 log_level=logging.NOTSET):
+        # cassandra database object
+        self.db = None
+        self.db_host = db_host
+        self.logger = logging.getLogger()
+        handler = logging.FileHandler(log_file)
+        self.logger.addHandler(handler)
+        self.logger.setLevel(log_level)
         
-    db = get_db()
+    def get_db(self):
+        if self.db is None:
+            self.db = CassaDb('data', self.db_host)
+        return self.db
         
-    if time_to == 0:
-        time_to = time.time()
-    
-    rs = db.get(cf_str, row_id, super_column=scf_str, 
-            column_start=time_from, column_finish=time_to, column_count=20000)
-    count = 0 if rs is None else len(rs)
-    
-    return rs, count, False if (count == 20000) else True
-    
-    
-def analyize_data(rs, period, statistic):
-    """[private func]analyize the data
-    period: minutes
-    """
-    if rs is None \
-        or not isinstance(period, int) \
-        or not isinstance(statistic, int):
-        return None
-    t = 0
-    key_time = 0
-    st = Statistics()
-    this_period = dict()
-    
-    for timestmp, value in rs.iteritems():
-        rt = time.gmtime(timestmp)
-        key = rt.tm_min + rt.tm_hour*100 + rt.tm_mday*10000 + \
-              rt.tm_mon*1000000 + rt.tm_year*100000000
-        if t == 0:
-            print '\tget first value'
-            st.clean()
-            t = timestmp
-            key_time = time.gmtime(timestmp)
-        if timestmp >= t + period*60:
-            print '\tnext', key, ">=", t, "+", period
-            st.clean()
-            t = timestmp
-            key_time = time.gmtime(timestmp)
-        st.update(float(value))
-        key2 = time.mktime(
-                          (key_time.tm_year, key_time.tm_mon, key_time.tm_mday,
-                          key_time.tm_hour, key_time.tm_min,0,0,0,0))
-        this_period[key2] = st.get_value(statistic)
-        print '\tcompute time=%d, value=%s(%f) "update(%s)=%d"' % \
-                (key, value, float(value), key2, this_period[key2])
+    def get_data(self, row_id, cf_str, scf_str, time_from=0, time_to=0):
+        """
+        param type: UnicodeType and IntType
+        return: recordset, count, bool(count > limit?)
+        """
+        if not isinstance(row_id, unicode) \
+            or not isinstance(cf_str, unicode) \
+            or not isinstance(scf_str, unicode) \
+            or not isinstance(time_from, int) \
+            or not isinstance(time_to, int):
+            return None, 0, True
             
-    this_period = OrderedDict(sorted(this_period.items(), key=lambda t: t[0]))
-    print statistic, ":each period(", period, "):"
-    for m, val in this_period.iteritems():
-        rt = time.gmtime(m)
-        key = rt.tm_min + rt.tm_hour*100 + rt.tm_mday*10000 + \
-              rt.tm_mon*1000000 + rt.tm_year*100000000
-        print '\t', key, m, val
+        db = self.get_db()
+            
+        if time_to == 0:
+            time_to = int(time.time())
         
-    return this_period
-
-
-############################# public API interface ############################
-def api_get_instances_list(cf_str):
-    if not isinstance(cf_str, unicode):
-        print 'param types error'
-        return None
-    ret = list()
-    limit = 20000
-    time_to = time.time()
-    time_from = time_to - 24 * 60 * 60
-    db = get_db()
-    
-    rs = db.get_range(cf_str)
-    if not rs is None:
-        for i in rs:
-            ret.append(i[0])
-    
-    return ret
-    
-    
-def api_get_by_instance_id(row_id, cf_str):
-    if not isinstance(row_id, unicode) \
-        or not isinstance(cf_str, unicode):
-        print 'param types error'
-        return None, 0, True
-    db = get_db()
-    rs = db.getbykey(cf_str, row_id)
-    count = 0 if rs is None else len(rs)
-    
-    return rs, count, False if (count == 20000) else True
-    
-    
-def api_getbykey(row_id, cf_str, scf_str, limit=20000):
-    """
-    example:cf=u'vmnetwork',scf=u'10.0.0.1',key=u'instance-0000002'
-    return: recordset, count, bool(count > limit?)
-    """
-    if not isinstance(row_id, unicode) \
-        or not isinstance(cf_str, unicode) \
-        or not isinstance(scf_str, unicode) \
-        or not isinstance(limit, int):
-        print 'param types error'
-        return None, 0, True
-    db = get_db()
-    rs = db.getbykey2(cf_str, key=row_id, super_column=scf_str, column_count=limit)
-    count = 0 if rs is None else len(rs)
-    
-    return rs, count, False if (count == 20000) else True
-
-
-def api_statistic(row_id, cf_str, scf_str, 
-                  statistic, period=5, time_from=0, time_to=0):
-    """statistic is STATISTIC enum
-    period default=5 minutes
-    time_to default=0(now)"""
-    if (not isinstance(row_id, unicode) \
-        or not isinstance(cf_str, unicode) \
-        or not isinstance(scf_str, unicode) \
-        or not isinstance(statistic, int) \
-        or not isinstance(period, int) \
-        or not isinstance(time_from, int) \
-        or not isinstance(time_to, int)):
-        print 'param types error'
-        return None, 0, True
+        rs = db.get(cf_str, row_id, super_column=scf_str, 
+                column_start=time_from, column_finish=time_to, column_count=20000)
+        count = 0 if rs is None else len(rs)
         
-    ret_len = 0
-    rs, count, all_data = api_getdata(row_id, cf_str, scf_str, 
-                                      time_from, time_to)
-    if not rs is None and count > 0:
-        buf = analyize_data(rs, 1, statistic)
-        ret = analyize_data(buf, period, statistic)
-        if ret is None:
-            ret_len = 0
-        else:
-            ret = OrderedDict(sorted(ret.items(), key=lambda t: t[0]))
-            ret_len = len(ret)
-        print ret_len, "result."
-    else:
-        print "no result."
-        ret = None
+        return rs, count, False if (count == 20000) else True
+        
+    def analyize_data(self, rs, period, statistic):
+        """[private func]analyize the data
+        period: minutes
+        """
+        if rs is None \
+            or not isinstance(period, int) \
+            or not isinstance(statistic, int):
+            return None
+        t = 0
+        key_time = 0
+        st = Statistics()
+        this_period = dict()
+        
+        for timestmp, value in rs.iteritems():
+            rt = time.gmtime(timestmp)
+            key = rt.tm_min + rt.tm_hour*100 + rt.tm_mday*10000 + \
+                  rt.tm_mon*1000000 + rt.tm_year*100000000
+            if t == 0:
+                print '\tget first value'
+                st.clean()
+                t = timestmp
+                key_time = time.gmtime(timestmp)
+            if timestmp >= t + period*60:
+                print '\tnext', key, ">=", t, "+", period
+                st.clean()
+                t = timestmp
+                key_time = time.gmtime(timestmp)
+            st.update(float(value))
+            key2 = time.mktime(
+                              (key_time.tm_year, key_time.tm_mon, key_time.tm_mday,
+                              key_time.tm_hour, key_time.tm_min,0,0,0,0))
+            this_period[key2] = st.get_value(statistic)
+            print '\tcompute time=%d, value=%s(%f) "update(%s)=%d"' % \
+                    (key, value, float(value), key2, this_period[key2])
+                
+        this_period = OrderedDict(sorted(this_period.items(), key=lambda t: t[0]))
+        print statistic, ":each period(", period, "):"
+        for m, val in this_period.iteritems():
+            rt = time.gmtime(m)
+            key = rt.tm_min + rt.tm_hour*100 + rt.tm_mday*10000 + \
+                  rt.tm_mon*1000000 + rt.tm_year*100000000
+            print '\t', key, m, val
+            
+        return this_period
+
+    ######################### public API interface ########################
+    def get_instances_list(self, cf_str):
+        if not isinstance(cf_str, unicode):
+            print 'param types error'
+            return None
+        ret = list()
+        limit = 20000
+        time_to = int(time.time())
+        time_from = time_to - 24 * 60 * 60
+        db = self.get_db()
+        
+        rs = db.get_range(cf_str)
+        if not rs is None:
+            for i in rs:
+                ret.append(i[0])
+        
+        return ret
+        
+    def get_by_instance_id(self, row_id, cf_str):
+        if not isinstance(row_id, unicode) \
+            or not isinstance(cf_str, unicode):
+            print 'param types error'
+            return None, 0, True
+        db = self.get_db()
+        rs = db.getbykey(cf_str, row_id)
+        count = 0 if rs is None else len(rs)
+        
+        return rs, count, False if (count == 20000) else True
+        
+    def get_by_key(self, row_id, cf_str, scf_str, limit=20000):
+        """
+        example:cf=u'vmnetwork',scf=u'10.0.0.1',key=u'instance-0000002'
+        return: recordset, count, bool(count > limit?)
+        """
+        if not isinstance(row_id, unicode) \
+            or not isinstance(cf_str, unicode) \
+            or not isinstance(scf_str, unicode) \
+            or not isinstance(limit, int):
+            print 'param types error'
+            return None, 0, True
+        db = self.get_db()
+        rs = db.getbykey2(cf_str, key=row_id, super_column=scf_str, column_count=limit)
+        count = 0 if rs is None else len(rs)
+        
+        return rs, count, False if (count == 20000) else True
+
+    def statistic(self, row_id, cf_str, scf_str, 
+                      statistic, period=5, time_from=0, time_to=0):
+        """statistic is STATISTIC enum
+        period default=5 minutes
+        time_to default=0(now)"""
+        if (not isinstance(row_id, unicode) \
+            or not isinstance(cf_str, unicode) \
+            or not isinstance(scf_str, unicode) \
+            or not isinstance(statistic, int) \
+            or not isinstance(period, int) \
+            or not isinstance(time_from, int) \
+            or not isinstance(time_to, int)):
+            print 'param types error'
+            return None, 0, True
+            
         ret_len = 0
-    return ret, ret_len, all_data
+        rs, count, all_data = self.get_data(row_id, cf_str, scf_str, 
+                                          time_from, time_to)
+        if not rs is None and count > 0:
+            buf = self.analyize_data(rs, 1, statistic)
+            ret = self.analyize_data(buf, period, statistic)
+            if ret is None:
+                ret_len = 0
+            else:
+                ret = OrderedDict(sorted(ret.items(), key=lambda t: t[0]))
+                ret_len = len(ret)
+            print ret_len, "result."
+        else:
+            print "no result."
+            ret = None
+            ret_len = 0
+        return ret, ret_len, all_data
 
-######################### end public API interface ############################
+    ##################### end public API interface ########################
+
+
+#db = None
+#"""
+## ColumnFamilys object collection
+## data format: {key: ColumnFamily Object}
+## example: {'cpu', ColumnFamily()}
+#"""
+
+#def get_db():
+#    global db
+#    if db is None:
+#        config = ConfigParser.ConfigParser()
+#        config.read("kanyun.conf")
+#        api_cfg = dict(config.items('api'))
+#        db = CassaDb('data', api_cfg['db_host'])
+#    return db
+#    
+#    
+#def api_getdata(row_id, cf_str, scf_str, time_from=0, time_to=0):
+#    """
+#    param type: UnicodeType and IntType
+#    return: recordset, count, bool(count > limit?)
+#    """
+#    if not isinstance(row_id, unicode) \
+#        or not isinstance(cf_str, unicode) \
+#        or not isinstance(scf_str, unicode) \
+#        or not isinstance(time_from, int) \
+#        or not isinstance(time_to, int):
+#        return None, 0, True
+#        
+#    db = get_db()
+#        
+#    if time_to == 0:
+#        time_to = int(time.time())
+#    
+#    rs = db.get(cf_str, row_id, super_column=scf_str, 
+#            column_start=time_from, column_finish=time_to, column_count=20000)
+#    count = 0 if rs is None else len(rs)
+#    
+#    return rs, count, False if (count == 20000) else True
+#    
+#    
+#def analyize_data(rs, period, statistic):
+#    """[private func]analyize the data
+#    period: minutes
+#    """
+#    if rs is None \
+#        or not isinstance(period, int) \
+#        or not isinstance(statistic, int):
+#        return None
+#    t = 0
+#    key_time = 0
+#    st = Statistics()
+#    this_period = dict()
+#    
+#    for timestmp, value in rs.iteritems():
+#        rt = time.gmtime(timestmp)
+#        key = rt.tm_min + rt.tm_hour*100 + rt.tm_mday*10000 + \
+#              rt.tm_mon*1000000 + rt.tm_year*100000000
+#        if t == 0:
+#            print '\tget first value'
+#            st.clean()
+#            t = timestmp
+#            key_time = time.gmtime(timestmp)
+#        if timestmp >= t + period*60:
+#            print '\tnext', key, ">=", t, "+", period
+#            st.clean()
+#            t = timestmp
+#            key_time = time.gmtime(timestmp)
+#        st.update(float(value))
+#        key2 = time.mktime(
+#                          (key_time.tm_year, key_time.tm_mon, key_time.tm_mday,
+#                          key_time.tm_hour, key_time.tm_min,0,0,0,0))
+#        this_period[key2] = st.get_value(statistic)
+#        print '\tcompute time=%d, value=%s(%f) "update(%s)=%d"' % \
+#                (key, value, float(value), key2, this_period[key2])
+#            
+#    this_period = OrderedDict(sorted(this_period.items(), key=lambda t: t[0]))
+#    print statistic, ":each period(", period, "):"
+#    for m, val in this_period.iteritems():
+#        rt = time.gmtime(m)
+#        key = rt.tm_min + rt.tm_hour*100 + rt.tm_mday*10000 + \
+#              rt.tm_mon*1000000 + rt.tm_year*100000000
+#        print '\t', key, m, val
+#        
+#    return this_period
+
+
+############################## public API interface ############################
+#def api_get_instances_list(cf_str):
+#    if not isinstance(cf_str, unicode):
+#        print 'param types error'
+#        return None
+#    ret = list()
+#    limit = 20000
+#    time_to = int(time.time())
+#    time_from = time_to - 24 * 60 * 60
+#    db = get_db()
+#    
+#    rs = db.get_range(cf_str)
+#    if not rs is None:
+#        for i in rs:
+#            ret.append(i[0])
+#    
+#    return ret
+#    
+#    
+#def api_get_by_instance_id(row_id, cf_str):
+#    if not isinstance(row_id, unicode) \
+#        or not isinstance(cf_str, unicode):
+#        print 'param types error'
+#        return None, 0, True
+#    db = get_db()
+#    rs = db.getbykey(cf_str, row_id)
+#    count = 0 if rs is None else len(rs)
+#    
+#    return rs, count, False if (count == 20000) else True
+#    
+#    
+#def api_getbykey(row_id, cf_str, scf_str, limit=20000):
+#    """
+#    example:cf=u'vmnetwork',scf=u'10.0.0.1',key=u'instance-0000002'
+#    return: recordset, count, bool(count > limit?)
+#    """
+#    if not isinstance(row_id, unicode) \
+#        or not isinstance(cf_str, unicode) \
+#        or not isinstance(scf_str, unicode) \
+#        or not isinstance(limit, int):
+#        print 'param types error'
+#        return None, 0, True
+#    db = get_db()
+#    rs = db.getbykey2(cf_str, key=row_id, super_column=scf_str, column_count=limit)
+#    count = 0 if rs is None else len(rs)
+#    
+#    return rs, count, False if (count == 20000) else True
+
+
+#def api_statistic(row_id, cf_str, scf_str, 
+#                  statistic, period=5, time_from=0, time_to=0):
+#    """statistic is STATISTIC enum
+#    period default=5 minutes
+#    time_to default=0(now)"""
+#    if (not isinstance(row_id, unicode) \
+#        or not isinstance(cf_str, unicode) \
+#        or not isinstance(scf_str, unicode) \
+#        or not isinstance(statistic, int) \
+#        or not isinstance(period, int) \
+#        or not isinstance(time_from, int) \
+#        or not isinstance(time_to, int)):
+#        print 'param types error'
+#        return None, 0, True
+#        
+#    ret_len = 0
+#    rs, count, all_data = api_getdata(row_id, cf_str, scf_str, 
+#                                      time_from, time_to)
+#    if not rs is None and count > 0:
+#        buf = analyize_data(rs, 1, statistic)
+#        ret = analyize_data(buf, period, statistic)
+#        if ret is None:
+#            ret_len = 0
+#        else:
+#            ret = OrderedDict(sorted(ret.items(), key=lambda t: t[0]))
+#            ret_len = len(ret)
+#        print ret_len, "result."
+#    else:
+#        print "no result."
+#        ret = None
+#        ret_len = 0
+#    return ret, ret_len, all_data
+
+########################## end public API interface ############################
 

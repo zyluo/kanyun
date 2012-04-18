@@ -33,9 +33,10 @@ if __name__ == '__main__':
     config = ConfigParser.ConfigParser()
     config.read("kanyun.conf")
     api_cfg = dict(config.items('api'))
+    
+    api = api_server.ApiServer(db_host=api_cfg['db_host'])
 
     context = zmq.Context()
-    
     api_socket = context.socket(zmq.REP)
     api_socket.bind("tcp://%(api_host)s:%(api_port)s" % api_cfg)
     print "listen tcp://%(api_host)s:%(api_port)s" % api_cfg
@@ -55,7 +56,7 @@ if __name__ == '__main__':
             period = msg[5]
             time_from = msg[6]
             time_to = msg[7]
-            rs, count, _ = api_server.api_statistic(row_id, cf_str, scf_str, statistic, period=period, time_from=time_from, time_to=time_to)
+            rs, count, _ = api.statistic(row_id, cf_str, scf_str, statistic, period=period, time_from=time_from, time_to=time_to)
             api_socket.send(json.dumps(rs))
         elif msg[0] == 'G':
             print '*' * 60
@@ -63,18 +64,18 @@ if __name__ == '__main__':
             row_id = msg[1]
             cf_str = msg[2]
             scf_str = msg[3]
-            rs, count, _ = api_server.api_getbykey(row_id, cf_str, scf_str)
+            rs, count, _ = api.get_by_key(row_id, cf_str, scf_str)
             api_socket.send(json.dumps(rs))
         elif msg[0] == 'K':
             print '*' * 60
             print "recv:", msg
             row_id = msg[1]
             cf_str = msg[2]
-            rs, count, _ = api_server.api_get_by_instance_id(row_id, cf_str)
+            rs, count, _ = api.get_by_instance_id(row_id, cf_str)
             api_socket.send(json.dumps(rs))
         elif msg[0] == 'L':
             cf_str = msg[1]
-            rs = api_server.api_get_instances_list(cf_str)
+            rs = api.get_instances_list(cf_str)
             api_socket.send(json.dumps(rs))
         else:
             api_socket.send(json.dumps([]))
