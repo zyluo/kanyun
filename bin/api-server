@@ -31,7 +31,8 @@ from kanyun.database.cassadb import CassaDb
 
 if __name__ == '__main__':
     config = ConfigParser.ConfigParser()
-    config.read("kanyun.conf")
+    if len(config.read("kanyun.conf"))==0:
+        config.read("/etc/kanyun.conf")
     api_cfg = dict(config.items('api'))
     
     api = api_server.ApiServer(db_host=api_cfg['db_host'])

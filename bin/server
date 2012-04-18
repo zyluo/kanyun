@@ -45,7 +45,8 @@ if __name__ == '__main__':
     autotasks.append(data_server.autotask_heartbeat)
     # 
 
-    config.read("kanyun.conf")
+    if len(config.read("kanyun.conf"))==0:
+        config.read("/etc/kanyun.conf")
     server_cfg = dict(config.items('server'))
     data_server.register_signal()
     context = zmq.Context()

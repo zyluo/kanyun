@@ -36,7 +36,8 @@ def main(param):
         return
 
     config = ConfigParser.ConfigParser()
-    config.read("kanyun.conf")
+    if len(config.read("kanyun.conf"))==0:
+        config.read("/etc/kanyun.conf")
     cfg = dict(config.items('worker'))
     
     WORKER_ID = cfg['id']
