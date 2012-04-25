@@ -32,12 +32,14 @@ def show_result(rs, cf_str):
     for i in rs:
         print "%s" % (i)
     print "%d results of cf=%s" % (len(rs), cf_str)
+    print "spend", time.clock(), "seconds"
     
     
 def show_result2(rs, row_id, cf_str, scf_str):
     for k, i in rs.iteritems():
         print "{%s:%s}" % (k, i)
     print "%d results of key=%s,cf=%s,scf=%s" % (len(rs), row_id, cf_str, scf_str)
+    print "spend", time.clock(), "seconds"
 
 
 def show_result3(rs, row_id):
@@ -46,6 +48,7 @@ def show_result3(rs, row_id):
             print "%s %d results" % (k, len(i))
             print i
     print "%d results of key=%s" % (len(rs), row_id)
+    print "spend", time.clock(), "seconds"
     
     
 def show_result4(rs, row_id='', cf_str='', scf_str='', 
@@ -69,7 +72,7 @@ def show_result4(rs, row_id='', cf_str='', scf_str='',
         for k, i in rs.iteritems():
             timestr = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(float(k)))
             print "\t", timestr, "=", i
-    
+    print "spend", time.clock(), "seconds"
     
 def list_instance_ip():
     # achieve in listip
@@ -93,7 +96,7 @@ def main():
             print "\tapi_client instance-0000002 vmnetwork 10.0.0.2"
             print "\tapi_client instance-00000012@lx12 cpu"
             print "\tapi_client instance-00000012@lx12 mem mem_free"
-            print "\tapi_client instance-0000002 vmnetwork 10.0.0.2 0 5 1332897600 0"
+            print "\tapi-client instance-00000001@pyw.novalocal cpu total 0 5 1332897600 0"
             return
         
     config = ConfigParser.ConfigParser()
@@ -107,6 +110,7 @@ def main():
     api_socket = apiclient.socket
 #    api_socket = context.socket(zmq.REQ)
 #    api_socket.connect("tcp://%(api_host)s:%(api_port)s" % cfg)
+    time.clock()
     
     if len(sys.argv) == 4:
         row_id, cf_str, scf_str = sys.argv[1], sys.argv[2], sys.argv[3]

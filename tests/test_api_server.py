@@ -23,7 +23,7 @@ import random
 import mox
 import pycassa
 from collections import OrderedDict
-
+from kanyun.common.const import *
 from kanyun.server import api_server
 
 class StatisticsTest(unittest.TestCase):
@@ -80,7 +80,25 @@ class ColumnFamilyMox():
         pass
     pass
     
+def testApiGetdataBuffer():
+    time.clock()
+    row_id = u'instance-00000001@pyw.novalocal'
+    time_from = 1332815400
+    time_to = 0
+    scf_str = u'total'
+    cf_str = u'cpu'
     
+    apiServer = api_server.ApiServer()
+    rs, count, _ = apiServer.get_data(row_id, cf_str, scf_str, time_from, time_to)
+    print "%d results, spend %f seconds" % (count, time.clock())
+    print "ApiGetdataBuf test \t\t\t[\033[1;33mOK\033[0m]"
+    
+    rs, count, _ = apiServer.get_data(row_id, cf_str, scf_str, time_from, time_to)
+    print "%d results, spend %f seconds" % (count, time.clock())
+    print "ApiGetdataBuf test \t\t\t[\033[1;33mOK\033[0m]"
+    print '-' * 60
+    
+        
 class TestApiServerClass(unittest.TestCase):
 
     def setUp(self):
@@ -96,7 +114,7 @@ class TestApiServerClass(unittest.TestCase):
         period = None
         statistic = None
         apiServer = api_server.ApiServer()
-        rs1, count, _ = apiServer.statistic(None, None, None, None, period=5, time_from=0, time_to=0)
+        (rs1, count, _) = apiServer.statistic(None, None, None, None, period=5, time_from=0, time_to=0)
         rs2, count, _ = apiServer.get_by_key(None, cf_str, scf_str, limit=20000)
         rs3, count, _ = apiServer.get_by_instance_id(row_id, cf_str)
         rs4, count, _ = apiServer.get_data(row_id, cf_str, scf_str, time_from=0, time_to=0)
@@ -139,7 +157,7 @@ class TestApiServerClass(unittest.TestCase):
         time_to = 0
         cf_str = u'cpu'
         scf_str = u'total'
-        statistic = api_server.STATISTIC.SUM
+        statistic = STATISTIC.SUM
         
         apiServer = api_server.ApiServer()
         self.mox.StubOutWithMock(apiServer, 'get_data')
@@ -147,7 +165,7 @@ class TestApiServerClass(unittest.TestCase):
                 time_from, time_to).AndReturn(ApiGetDataMox())
         self.mox.ReplayAll()
         statistic = api_server.STATISTIC.SUM
-        rs, count, _ = apiServer.statistic(row_id, cf_str, scf_str, \
+        (rs, count, _) = apiServer.statistic(row_id, cf_str, scf_str, \
                 statistic, period, \
                 time_from, time_to)
         self.assertEqual(count, 1)
@@ -166,7 +184,7 @@ class TestApiServerClass(unittest.TestCase):
         time_to = 0
         cf_str = u'cpu'
         scf_str = u'total'
-        statistic = api_server.STATISTIC.MAXIMUM
+        statistic = STATISTIC.MAXIMUM
         
         apiServer = api_server.ApiServer()
         self.mox.StubOutWithMock(apiServer, 'get_data')
@@ -174,7 +192,7 @@ class TestApiServerClass(unittest.TestCase):
                 time_from, time_to).AndReturn(ApiGetDataMox())
         self.mox.ReplayAll()
         statistic = api_server.STATISTIC.MAXIMUM
-        rs, count, _ = apiServer.statistic(row_id, cf_str, scf_str, \
+        (rs, count, _) = apiServer.statistic(row_id, cf_str, scf_str, \
                                            statistic, period, \
                                            time_from, time_to)
         self.assertEqual(count, 1)
@@ -193,7 +211,7 @@ class TestApiServerClass(unittest.TestCase):
         time_to = 0
         cf_str = u'cpu'
         scf_str = u'total'
-        statistic = api_server.STATISTIC.MINIMUM
+        statistic = STATISTIC.MINIMUM
         
         apiServer = api_server.ApiServer()
         self.mox.StubOutWithMock(apiServer, 'get_data')
@@ -201,7 +219,7 @@ class TestApiServerClass(unittest.TestCase):
                 time_from, time_to).AndReturn(ApiGetDataMox())
         self.mox.ReplayAll()
         statistic = api_server.STATISTIC.MINIMUM
-        rs, count, _ = apiServer.statistic(row_id, cf_str, scf_str, \
+        (rs, count, _) = apiServer.statistic(row_id, cf_str, scf_str, \
                                            statistic, period, \
                                            time_from, time_to)
         self.assertEqual(count, 1)
@@ -220,7 +238,7 @@ class TestApiServerClass(unittest.TestCase):
         time_to = 0
         cf_str = u'cpu'
         scf_str = u'total'
-        statistic = api_server.STATISTIC.AVERAGE
+        statistic = STATISTIC.AVERAGE
         
         apiServer = api_server.ApiServer()
         self.mox.StubOutWithMock(apiServer, 'get_data')
@@ -228,7 +246,7 @@ class TestApiServerClass(unittest.TestCase):
                 time_from, time_to).AndReturn(ApiGetDataMox())
         self.mox.ReplayAll()
         statistic = api_server.STATISTIC.AVERAGE
-        rs, count, _ = apiServer.statistic(row_id, cf_str, scf_str, \
+        (rs, count, _) = apiServer.statistic(row_id, cf_str, scf_str, \
                 statistic, period, \
                 time_from, time_to)
         self.assertEqual(count, 1)
@@ -237,7 +255,32 @@ class TestApiServerClass(unittest.TestCase):
         print "%d AVERAGE results, spend %f seconds" % (count, time.clock())
         print "api_statistics AVERAGE test \t\t\t[\033[1;33mOK\033[0m]"
         print '-' * 60
-
+    def testApiBuf(self):
+        time.clock()
+        row_id = u'instance-00000001@pyw.novalocal'
+        period = 5
+        time_from = 1332833464
+        time_to = 0
+        cf_str = u'cpu'
+        scf_str = u'total'
+        statistic = STATISTIC.AVERAGE
+        
+        apiServer = api_server.ApiServer()
+        self.mox.StubOutWithMock(apiServer, 'get_data')
+        apiServer.get_data(row_id, cf_str, scf_str, \
+                time_from, time_to).AndReturn(ApiGetDataMox())
+        self.mox.ReplayAll()
+        statistic = STATISTIC.AVERAGE
+        (rs, count, _) = apiServer.statistic(row_id, cf_str, scf_str, \
+                statistic, period, \
+                time_from, time_to)
+        (rs, count, _) = apiServer.statistic(row_id, cf_str, scf_str, \
+                statistic, period, \
+                time_from, time_to)
+        self.assertEqual(count, 1)
+        self.mox.VerifyAll()
+        
+        self.assertEqual(apiServer.hit_rate, 1)
     
 class TestApiServer(unittest.TestCase):
 
@@ -253,12 +296,13 @@ class TestApiServer(unittest.TestCase):
         scf_str = None
         period = None
         statistic = None
-        rs1, count, _ = api_server.api_statistic(None, None, None, None, period=5, time_from=0, time_to=0)
-        rs2, count, _ = api_server.api_getbykey(None, cf_str, scf_str, limit=20000)
-        rs3, count, _ = api_server.api_get_by_instance_id(row_id, cf_str)
-        rs4, count, _ = api_server.api_getdata(row_id, cf_str, scf_str, time_from=0, time_to=0)
-        rs5 = api_server.api_get_instances_list(None)
-        rs6 = api_server.analyize_data(None, period, statistic)
+        apiServer = api_server.ApiServer()
+        (rs1, count, _) = apiServer.statistic(None, None, None, None, period=5, time_from=0, time_to=0)
+        rs2, count, _ = apiServer.get_by_key(None, cf_str, scf_str, limit=20000)
+        rs3, count, _ = apiServer.get_by_instance_id(row_id, cf_str)
+        rs4, count, _ = apiServer.get_data(row_id, cf_str, scf_str, time_from=0, time_to=0)
+        rs5 = apiServer.get_instances_list(None)
+        rs6 = apiServer.analyize_data(None, period, statistic)
         assert(rs1 is None)
         assert(rs2 is None)
         assert(rs3 is None)
@@ -275,13 +319,14 @@ class TestApiServer(unittest.TestCase):
         time_to = 0
         scf_str = 'total'
         cf_str = 'cpu'
+        apiServer = api_server.ApiServer()
                 
-        self.mox.StubOutWithMock(api_server, 'api_getdata')
-        api_server.api_getdata(row_id, cf_str, scf_str, \
+        self.mox.StubOutWithMock(apiServer, 'get_data')
+        apiServer.get_data(row_id, cf_str, scf_str, \
                 time_from, time_to).AndReturn(ApiGetDataMox())
         self.mox.ReplayAll()
         
-        rs, count, _ = api_server.api_getdata(row_id, cf_str, scf_str, time_from, time_to)
+        rs, count, _ = apiServer.get_data(row_id, cf_str, scf_str, time_from, time_to)
         self.mox.VerifyAll()
         print "%d results, spend %f seconds" % (count, time.clock())
         print "ApiGetdata test \t\t\t[\033[1;33mOK\033[0m]"
@@ -295,15 +340,16 @@ class TestApiServer(unittest.TestCase):
         time_to = 0
         cf_str = u'cpu'
         scf_str = u'total'
-        statistic = api_server.STATISTIC.SUM
+        statistic = STATISTIC.SUM
+        apiServer = api_server.ApiServer()
         
         m = self.mox
-        m.StubOutWithMock(api_server, 'api_getdata')
-        api_server.api_getdata(row_id, cf_str, scf_str, \
+        m.StubOutWithMock(apiServer, 'get_data')
+        apiServer.get_data(row_id, cf_str, scf_str, \
                 time_from, time_to).AndReturn(ApiGetDataMox())
         self.mox.ReplayAll()
-        statistic = api_server.STATISTIC.SUM
-        rs, count, _ = api_server.api_statistic(row_id, cf_str, scf_str, \
+        statistic = STATISTIC.SUM
+        (rs, count, _) = apiServer.statistic(row_id, cf_str, scf_str, \
                 statistic, period, \
                 time_from, time_to)
         self.assertEqual(count, 1)
@@ -322,15 +368,16 @@ class TestApiServer(unittest.TestCase):
         time_to = 0
         cf_str = u'cpu'
         scf_str = u'total'
-        statistic = api_server.STATISTIC.MAXIMUM
+        statistic = STATISTIC.MAXIMUM
+        apiServer = api_server.ApiServer()
         
         m = self.mox
-        m.StubOutWithMock(api_server, 'api_getdata')
-        api_server.api_getdata(row_id, cf_str, scf_str, \
+        m.StubOutWithMock(apiServer, 'get_data')
+        apiServer.get_data(row_id, cf_str, scf_str, \
                 time_from, time_to).AndReturn(ApiGetDataMox())
         self.mox.ReplayAll()
-        statistic = api_server.STATISTIC.MAXIMUM
-        rs, count, _ = api_server.api_statistic(row_id, cf_str, scf_str, \
+        statistic = STATISTIC.MAXIMUM
+        (rs, count, _) = apiServer.statistic(row_id, cf_str, scf_str, \
                 statistic, period, \
                 time_from, time_to)
         self.assertEqual(count, 1)
@@ -349,15 +396,16 @@ class TestApiServer(unittest.TestCase):
         time_to = 0
         cf_str = u'cpu'
         scf_str = u'total'
-        statistic = api_server.STATISTIC.MINIMUM
+        statistic = STATISTIC.MINIMUM
+        apiServer = api_server.ApiServer()
         
         m = self.mox
-        m.StubOutWithMock(api_server, 'api_getdata')
-        api_server.api_getdata(row_id, cf_str, scf_str, \
+        m.StubOutWithMock(apiServer, 'get_data')
+        apiServer.get_data(row_id, cf_str, scf_str, \
                 time_from, time_to).AndReturn(ApiGetDataMox())
         self.mox.ReplayAll()
-        statistic = api_server.STATISTIC.MINIMUM
-        rs, count, _ = api_server.api_statistic(row_id, cf_str, scf_str, \
+        statistic = STATISTIC.MINIMUM
+        (rs, count, _) = apiServer.statistic(row_id, cf_str, scf_str, \
                 statistic, period, \
                 time_from, time_to)
         self.assertEqual(count, 1)
@@ -376,15 +424,16 @@ class TestApiServer(unittest.TestCase):
         time_to = 0
         cf_str = u'cpu'
         scf_str = u'total'
-        statistic = api_server.STATISTIC.AVERAGE
+        statistic = STATISTIC.AVERAGE
         
         m = self.mox
-        m.StubOutWithMock(api_server, 'api_getdata')
-        api_server.api_getdata(row_id, cf_str, scf_str, \
+        apiServer = api_server.ApiServer()
+        m.StubOutWithMock(apiServer, 'get_data')
+        apiServer.get_data(row_id, cf_str, scf_str, \
                 time_from, time_to).AndReturn(ApiGetDataMox())
         self.mox.ReplayAll()
-        statistic = api_server.STATISTIC.AVERAGE
-        rs, count, _ = api_server.api_statistic(row_id, cf_str, scf_str, \
+        statistic = STATISTIC.AVERAGE
+        (rs, count, _) = apiServer.statistic(row_id, cf_str, scf_str, \
                 statistic, period, \
                 time_from, time_to)
         self.assertEqual(count, 1)
@@ -397,6 +446,8 @@ class TestApiServer(unittest.TestCase):
 
 if __name__ == '__main__':
     time.clock()
+    testApiGetdataBuffer()
+    
     ApiTestSuite = unittest.TestSuite()
     ApiTestSuite.addTest(StatisticsTest("testStatistics"))
     
@@ -416,3 +467,4 @@ if __name__ == '__main__':
     
     runner = unittest.TextTestRunner()
     runner.run(ApiTestSuite)
+    

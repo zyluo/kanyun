@@ -26,6 +26,7 @@ import ConfigParser
 import zmq
 from collections import OrderedDict
 from kanyun.common.const import *
+from kanyun.common.buffer import HallBuffer
 from kanyun.database.cassadb import CassaDb
 
 """
@@ -113,6 +114,7 @@ class ApiServer():
         # cassandra database object
         self.db = None
         self.db_host = db_host
+        self.buf = HallBuffer()
         self.logger = logging.getLogger()
         handler = logging.FileHandler(log_file)
         self.logger.addHandler(handler)
@@ -135,16 +137,22 @@ class ApiServer():
             or not isinstance(time_to, int):
             return None, 0, True
             
-        db = self.get_db()
-            
         if time_to == 0:
             time_to = int(time.time())
+            
+        bufkey = str([row_id, cf_str, scf_str, time_from, time_to])
+        if self.buf.hit_test(bufkey):
+            return self.buf.get_buf(bufkey)
         
+        db = self.get_db()
         rs = db.get(cf_str, row_id, super_column=scf_str, 
                 column_start=time_from, column_finish=time_to, column_count=20000)
         count = 0 if rs is None else len(rs)
         
-        return rs, count, False if (count == 20000) else True
+        ret = rs, count, False if (count == 20000) else True
+        self.buf.save(bufkey, ret)
+        
+        return ret
         
     def analyize_data(self, rs, period, statistic):
         """[private func]analyize the data
@@ -252,8 +260,13 @@ class ApiServer():
             print 'param types error'
             return None, 0, True
             
+        bufkey = str([row_id, cf_str, scf_str, 
+                      statistic, period, time_from, time_to])
+        if self.buf.hit_test(bufkey):
+            return self.buf.get_buf(bufkey)
+            
         ret_len = 0
-        rs, count, all_data = self.get_data(row_id, cf_str, scf_str, 
+        (rs, count, all_data) = self.get_data(row_id, cf_str, scf_str, 
                                           time_from, time_to)
         if not rs is None and count > 0:
             buf = self.analyize_data(rs, 1, statistic)
@@ -268,7 +281,10 @@ class ApiServer():
             print "no result."
             ret = None
             ret_len = 0
-        return ret, ret_len, all_data
+            
+        result = ret, ret_len, all_data
+        self.buf.save(bufkey, result)
+        return result
 
     ##################### end public API interface ########################
 

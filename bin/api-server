@@ -31,7 +31,7 @@ from kanyun.database.cassadb import CassaDb
 
 if __name__ == '__main__':
     config = ConfigParser.ConfigParser()
-    if len(config.read("kanyun.conf"))==0:
+    if len(config.read("kanyun.conf")) == 0:
         config.read("/etc/kanyun.conf")
     api_cfg = dict(config.items('api'))
     
@@ -57,7 +57,7 @@ if __name__ == '__main__':
             period = msg[5]
             time_from = msg[6]
             time_to = msg[7]
-            rs, count, _ = api.statistic(row_id, cf_str, scf_str, statistic, period=period, time_from=time_from, time_to=time_to)
+            (rs, count, _) = api.statistic(row_id, cf_str, scf_str, statistic, period=period, time_from=time_from, time_to=time_to)
             api_socket.send(json.dumps(rs))
         elif msg[0] == 'G':
             print '*' * 60

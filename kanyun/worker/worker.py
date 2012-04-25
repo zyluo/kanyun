@@ -93,7 +93,7 @@ class Worker:
         self.plugins = list()
         
     def register_plugin(self, plugin):
-        self.plugins.append(plugin, True)
+        self.plugins.append((plugin, True))
     
     def update_time(self):
         """[private]save the current time.First update will between 0-5(sec) in current minutes"""
@@ -137,7 +137,7 @@ class Worker:
         now = time.localtime()
         self.logger.debug('%02d:%02d:%02d working...' % (now[3], now[4], now[5]))
 
-        for plugin, enable in self.plugins:
+        for (plugin, enable) in self.plugins:
             try:
                 msg_type, info = plugin(self.worker_id)
                 if (not info is None) and len(info) > 0:

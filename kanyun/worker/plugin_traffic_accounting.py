@@ -26,6 +26,12 @@ Protocol format:
 {'10.0.0.2': {'11111': '12'}, '10.0.0.3': {'11122': '45'}}
 cf.insert('10.0.0.2', {u'usage': {1332389700: '12'}})
 
+run without root permision:
+    sudo touch /etc/sudoers.d/monitor
+    sudo vi /etc/sudoers.d/monitor
+    sudo chmod 440 /etc/sudoers.d/monitor
+    username ALL = (root) NOPASSWD: /sbin/iptables-save, /sbin/iptables
+
 mock:
   for testing only:
      On compute node:
@@ -54,7 +60,7 @@ def get_hostname():
     return ret
     
 _ip_bytes = {} # {'10.0.0.2': '10', '10.0.0.3': '5'}
-CMD = "iptables-save -t filter -c"
+CMD = "sudo iptables-save -t filter -c"
 hostname = get_hostname()
 
 def get_traffic_accounting_info():
