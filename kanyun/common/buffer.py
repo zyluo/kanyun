@@ -36,13 +36,13 @@ class HallBuffer():
         save(k, data)
     """
     def __init__(self):
-        # buf format: key:[bufdata, hit_times, last_hit_Time]
+        # buf format: key:[bufdata, hit_times, last_hit_Time, create_time]
         self.buf = dict()
 
     def save(self, key, data):
         if isinstance(key, list):
             key = str(key)    
-        self.buf[key] = [data, 0, time.time()]
+        self.buf[key] = [data, 0, time.time(), time.time()]
         return data
         
     def cleanup(self, time_out = 300, max_count = 999):
@@ -71,6 +71,9 @@ class HallBuffer():
         if isinstance(key, list):
             key = str(key)
         if self.buf.has_key(key):
+            if time.time() - self.buf[key][3] > 2*60:
+                buf = self.buf.pop(key)
+                return buf[key][0];
             return self.buf[key][0];
         else:
             return None

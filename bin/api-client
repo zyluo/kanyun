@@ -107,14 +107,11 @@ def main():
     context = zmq.Context()
 
     apiclient = api_client.ApiClient(cfg['api_host'], cfg['api_port'])
-    api_socket = apiclient.socket
-#    api_socket = context.socket(zmq.REQ)
-#    api_socket.connect("tcp://%(api_host)s:%(api_port)s" % cfg)
     time.clock()
     
     if len(sys.argv) == 4:
         row_id, cf_str, scf_str = sys.argv[1], sys.argv[2], sys.argv[3]
-        rs = api_client.invoke_getbykey2(api_socket, row_id, cf_str, scf_str)
+#        rs = api_client.invoke_getbykey2(apiclient.socket, row_id, cf_str, scf_str)
         show_result2(rs, row_id, cf_str, scf_str)
         return
     elif len(sys.argv) == 2 and sys.argv[1] == '-l':
@@ -122,63 +119,76 @@ def main():
         return
     elif len(sys.argv) == 2:
         cf_str = sys.argv[1]
-        rs = api_client.invoke_getInstacesList(api_socket, cf_str)
+#        rs = api_client.invoke_getInstacesList(apiclient.socket, cf_str)
         show_result(rs, cf_str)
     elif len(sys.argv) == 3 and sys.argv[1] == '-k':
         row_id = sys.argv[2]
-        rs = api_client.invoke_getbykey(api_socket, row_id)
+#        rs = apiclient.invoke_getbykey(apiclient.socket, row_id)
         show_result3(rs, row_id)
         return
     elif len(sys.argv) == 3:
-        if sys.argv[2] == 'nic' or sys.argv[2] == 'blk':
-            row_id, cf_str, scf_str = sys.argv[1], sys.argv[2], sys.argv[2] + '_incoming'
-            rs = api_client.invoke_getbykey2(api_socket, row_id, cf_str, scf_str)
-            show_result2(rs, row_id, cf_str, scf_str)
-            
-            row_id, cf_str, scf_str = sys.argv[1], sys.argv[2], sys.argv[2] + '_outgoing'
-            rs = api_client.invoke_getbykey2(api_socket, row_id, cf_str, scf_str)
-            show_result2(rs, row_id, cf_str, scf_str)
-            return
-        elif sys.argv[2] == 'blk':
-            row_id, cf_str, scf_str = sys.argv[1], sys.argv[2], sys.argv[2] + '_read'
-            rs = api_client.invoke_getbykey2(api_socket, row_id, cf_str, scf_str)
-            show_result2(rs, row_id, cf_str, scf_str)
-            
-            row_id, cf_str, scf_str = sys.argv[1], sys.argv[2], sys.argv[2] + '_write'
-            rs = api_client.invoke_getbykey2(api_socket, row_id, cf_str, scf_str)
-            show_result2(rs, row_id, cf_str, scf_str)
-            return
-        elif sys.argv[2] == 'mem':
-            row_id, cf_str, scf_str = sys.argv[1], sys.argv[2], sys.argv[2] + '_free'
-            rs = api_client.invoke_getbykey2(api_socket, row_id, cf_str, scf_str)
-            show_result2(rs, row_id, cf_str, scf_str)
-            
-            row_id, cf_str, scf_str = sys.argv[1], sys.argv[2], sys.argv[2] + '_max'
-            rs = api_client.invoke_getbykey2(api_socket, row_id, cf_str, scf_str)
-            show_result2(rs, row_id, cf_str, scf_str)
-            return
-        else:
-            row_id, cf_str, scf_str = sys.argv[1], sys.argv[2], 'total'
-            rs = api_client.invoke_getbykey2(api_socket, row_id, cf_str, scf_str)
-            show_result2(rs, row_id, cf_str, scf_str)
+#        if sys.argv[2] == 'nic' or sys.argv[2] == 'blk':
+#            row_id, cf_str, scf_str = sys.argv[1], sys.argv[2], sys.argv[2] + '_incoming'
+#            rs = api_client.invoke_getbykey2(apiclient.socket, row_id, cf_str, scf_str)
+#            show_result2(rs, row_id, cf_str, scf_str)
+#            
+#            row_id, cf_str, scf_str = sys.argv[1], sys.argv[2], sys.argv[2] + '_outgoing'
+#            rs = api_client.invoke_getbykey2(apiclient.socket, row_id, cf_str, scf_str)
+#            show_result2(rs, row_id, cf_str, scf_str)
+#            return
+#        elif sys.argv[2] == 'blk':
+#            row_id, cf_str, scf_str = sys.argv[1], sys.argv[2], sys.argv[2] + '_read'
+#            rs = api_client.invoke_getbykey2(apiclient.socket, row_id, cf_str, scf_str)
+#            show_result2(rs, row_id, cf_str, scf_str)
+#            
+#            row_id, cf_str, scf_str = sys.argv[1], sys.argv[2], sys.argv[2] + '_write'
+#            rs = api_client.invoke_getbykey2(apiclient.socket, row_id, cf_str, scf_str)
+#            show_result2(rs, row_id, cf_str, scf_str)
+#            return
+#        elif sys.argv[2] == 'mem':
+#            row_id, cf_str, scf_str = sys.argv[1], sys.argv[2], sys.argv[2] + '_free'
+#            rs = api_client.invoke_getbykey2(apiclient.socket, row_id, cf_str, scf_str)
+#            show_result2(rs, row_id, cf_str, scf_str)
+#            
+#            row_id, cf_str, scf_str = sys.argv[1], sys.argv[2], sys.argv[2] + '_max'
+#            rs = api_client.invoke_getbykey2(apiclient.socket, row_id, cf_str, scf_str)
+#            show_result2(rs, row_id, cf_str, scf_str)
+#            return
+#        else:
+#            row_id, cf_str, scf_str = sys.argv[1], sys.argv[2], 'total'
+#            rs = api_client.invoke_getbykey2(apiclient.socket, row_id, cf_str, scf_str)
+#            show_result2(rs, row_id, cf_str, scf_str)
         return
     elif len(sys.argv) == 8:
-        row_id, cf_str, scf_str = sys.argv[1], sys.argv[2], sys.argv[3]
-        statistic, period = int(sys.argv[4]), int(sys.argv[5])
-        time_from, time_to = int(sys.argv[6]), int(sys.argv[7])
-        apiclient.set_param(row_id, cf_str, scf_str, statistic, period, time_from, time_to)
-        rs = apiclient.get_result(statistic)
-        show_result4(rs, row_id, cf_str, scf_str, statistic, time_from, time_to)
-#        rs = api_client.invoke_statistics(api_socket, sys.argv[1], sys.argv[2], sys.argv[3],sys.argv[4], sys.argv[5], sys.argv[6], sys.argv[7])
+#        row_id, cf_str, scf_str = sys.argv[1], sys.argv[2], sys.argv[3]
+#        statistic, period = int(sys.argv[4]), int(sys.argv[5])
+#        time_from, time_to = int(sys.argv[6]), int(sys.argv[7])
+#        apiclient.set_param(row_id, cf_str, scf_str, statistic, period, time_from, time_to)
+#        rs = apiclient.get_result(statistic)
+#        show_result4(rs, row_id, cf_str, scf_str, statistic, time_from, time_to)
         return
     elif len(sys.argv) == 7:
-        row_id, cf_str, scf_str = sys.argv[1], sys.argv[2], sys.argv[3]
-        statistic, period = int(sys.argv[4]), int(sys.argv[5])
-        time_from, time_to = int(sys.argv[6]), 0
-        apiclient.set_param(row_id, cf_str, scf_str, statistic, period, time_from, time_to)
-        rs = apiclient.get_result(statistic)
-        show_result4(rs, row_id, cf_str, scf_str, statistic, time_from, time_to)
-#        rs = api_client.invoke_statistics(api_socket, sys.argv[1], sys.argv[2], sys.argv[3],sys.argv[4], sys.argv[5], sys.argv[6], '0')
+#        row_id, cf_str, scf_str = sys.argv[1], sys.argv[2], sys.argv[3]
+#        statistic, period = int(sys.argv[4]), int(sys.argv[5])
+#        time_from, time_to = int(sys.argv[6]), 0
+#        apiclient.set_param(row_id, cf_str, scf_str, statistic, period, time_from, time_to)
+#        rs = apiclient.get_result(statistic)
+#        show_result4(rs, row_id, cf_str, scf_str, statistic, time_from, time_to)
+        return
+    else:
+        rs = apiclient.query_usage_report({
+                                    'method': 'query_usage_report',
+                                    'args': {
+                                        'id': 'instance-00000001@pyw.novalocal',
+                                        'metric': 'cpu',
+                                        'metric_param': 'total',
+                                        'statistic': 'max',
+                                        'period': 5,
+                                        'timestamp_from': '2012-02-20T12:12:12',
+                                        'timestamp_to': '2012-05-22T12:12:12',
+                                        }
+                                    })
+        show_result2(rs, "instance-00000001@pyw.novalocal", "cpu", "total")
         return
 
     

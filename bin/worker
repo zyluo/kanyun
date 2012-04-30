@@ -64,7 +64,11 @@ def main(param):
     broadcast.connect("tcp://%(broadcast_host)s:%(broadcast_port)s" % cfg)
     broadcast.setsockopt(zmq.SUBSCRIBE, "lb")
 
-    worker = Worker(context=context, feedback_host=cfg['feedback_host'], feedback_port=cfg['feedback_port'], logger=logger, worker_id=WORKER_ID)
+    worker = Worker(context=context, 
+                    feedback_host=cfg['feedback_host'], 
+                    feedback_port=cfg['feedback_port'], 
+                    logger=logger, 
+                    worker_id=WORKER_ID)
     # TODO: the plugin come form configure file maybe better
     #worker.register_plugin(plugin_local_cpu)
     worker.register_plugin(plugin_heartbeat)

@@ -18,6 +18,7 @@
 
 import sys
 import time
+import iso8601
 import types
 import json
 import logging
@@ -68,19 +69,19 @@ class Statistics():
         self.diff = value - self.previous
         self.previous = value
         
-    def get_value(self, which):
-        if which == STATISTIC.AVERAGE:
+    def get_value(self, w):
+        if w == 'avg' or w == STATISTIC.AVERAGE:
             return self.get_agerage()
-        elif which == STATISTIC.MINIMUM:
+        elif w == 'min' or w == STATISTIC.MINIMUM:
             return self.get_min()
-        elif which == STATISTIC.MAXIMUM:
+        elif w == 'max' or w == STATISTIC.MAXIMUM:
             return self.get_max()
-        elif which == STATISTIC.SUM:
+        elif w == 'sum' or w == STATISTIC.SUM:
             return self.get_sum()
-        elif which == STATISTIC.SAMPLES:
+        elif w == 'sam' or w == STATISTIC.SAMPLES:
             return self.get_samples()
         else:
-            print 'error:', which
+            print 'error:', w
             return 0
             
     def get_diff(self):
@@ -157,10 +158,10 @@ class ApiServer():
     def analyize_data(self, rs, period, statistic):
         """[private func]analyize the data
         period: minutes
+        return: {"key":"value"}
         """
         if rs is None \
-            or not isinstance(period, int) \
-            or not isinstance(statistic, int):
+            or not isinstance(period, int):
             return None
         t = 0
         key_time = 0
@@ -244,6 +245,73 @@ class ApiServer():
         count = 0 if rs is None else len(rs)
         
         return rs, count, False if (count == 20000) else True
+
+    def query_usage_report(self, args, **kwargs):
+#    def query_usage_report(self, arg, id=None, metric='cpu', 
+#                           metric_param='total',
+#                           statistic='avg', period=5,
+#                           timestamp_from=None, timestamp_to=None,
+#                           **kwargs):
+        """statistic is STATISTIC enum
+        period default=5 minutes
+        time_to default=0(now)"""
+        """
+        {
+            'id': 'instance00001'
+            'metric': 'network',
+            'metric_param': 'vnet0',
+            'statistic': 'sum',
+            'period': 5,
+            'timestamp_from': '2012-02-20T12:12:12',
+            'timestamp_to': '2012-02-22T12:12:12',
+        }
+        """
+#        usage_report = dict()
+#        datetime_from = iso8601.parse_date(timestamp_from)
+#        datetime_to = iso8601.parse_date(timestamp_to)
+#        # TODO: implement
+#        return {'data': usage_report}
+        
+        row_id = args['id']
+        cf_str = args['metric']
+        scf_str = args['metric_param']
+        statistic = args['statistic']
+        period = int(args['period'])
+        timestamp_from = args['timestamp_from']
+        timestamp_to = args['timestamp_to']
+        time_from = iso8601.parse_date(timestamp_from)
+        time_from = int(time.mktime(time_from.timetuple()))
+        time_to = int(time.time())
+        if not timestamp_to is None:
+            time_to = iso8601.parse_date(timestamp_to)
+            time_to = int(time.mktime(time_to.timetuple()))
+            
+        bufkey = str([row_id, cf_str, scf_str, 
+                      statistic, period, time_from, time_to])
+        if self.buf.hit_test(bufkey):
+            return self.buf.get_buf(bufkey)
+            
+        ret_len = 0
+        (rs, count, all_data) = self.get_data(row_id, cf_str, scf_str, 
+                                          time_from, time_to)
+        if not rs is None and count > 0:
+            buf = self.analyize_data(rs, 1, statistic)
+            ret = self.analyize_data(buf, period, statistic)
+            if ret is None:
+                ret_len = 0
+            else:
+                ret = OrderedDict(sorted(ret.items(), key=lambda t: t[0]))
+                ret_len = len(ret)
+            print ret_len, "result."
+        else:
+            print "no result."
+            ret = None
+            ret_len = 0
+            
+        result = ret, ret_len, all_data
+        self.buf.save(bufkey, result)
+        return result
+
 
     def statistic(self, row_id, cf_str, scf_str, 
                       statistic, period=5, time_from=0, time_to=0):

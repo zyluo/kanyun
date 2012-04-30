@@ -21,6 +21,7 @@ import time
 import ConfigParser
 import json
 import zmq
+import uuid
 
 from kanyun.common.const import *
 
@@ -33,82 +34,96 @@ example:
 """
 
 param_tmpl = ['S', u'instance-00000001@pyw.novalocal', u'cpu', u'total', 0, 5, 1332897600, 0]
+param_tmpl = {
+    'method': 'query_usage_report',
+    'args': {
+        'id': "",
+        'metric': "",
+        'metric_param': 'vnet0',
+        'statistic': 'sum',
+        'period': 0,
+        'timestamp_from': '2012-02-20T12:12:12',
+        'timestamp_to': '2012-02-22T12:12:12',
+    }
+}
 
-def invoke(socket, param):
-    socket.send (json.dumps(param))
+#def invoke(socket, param):
+##    socket.send (json.dumps(param))
 
-    #  Get the reply.
-    message = socket.recv()
-    
-    return json.loads(message)
-    
-    
-def invoke_getbykey2(socket, row_id, cf_str, scf_str):
-    param = [u'G', row_id, cf_str, scf_str]
-    r = invoke(socket, param)
-    if r is None:
-        r = dict()
-    return r
+##    #  Get the reply.
+##    message = socket.recv()
+##    
+##    return json.loads(message)
+#    socket.send_multipart(['kanyun', '0', json.dumps(param)])
+
+#    msg_type, uuid, message = socket.recv_multipart()
+#    return json.loads(message)
+#    
+#def invoke_getbykey2(socket, row_id, cf_str, scf_str):
+#    param = [u'G', row_id, cf_str, scf_str]
+#    r = invoke(socket, param)
+#    if r is None:
+#        r = dict()
+#    return r
 
 
-def invoke_getInstacesList(socket, cf_str):
-    param = [u'L', cf_str]
-    r = invoke(socket, param)
-    if r is None:
-        r = list()
-    return r
-    
-    
-def invoke_getbykey(socket, row_id):
-    ret = list()
-    cmd = list()
-    cmd.append([u'K', row_id, u"vmnetwork"])
-    cmd.append([u'K', row_id, u"mem"])
-    cmd.append([u'K', row_id, u"nic"])
-    cmd.append([u'K', row_id, u"blk"])
-    cmd.append([u'G', row_id, u"cpu", u"total"])
-    
-    for i in cmd:
-        cf_str = i[2]
-        r = invoke(socket, i)
-        if r is None:
-            r = dict()
-        ret.append(r)
-    return ret
-    
-    
-def invoke_statistics(api_client, row_id, cf_str, scf_str, 
-                      statistic, period=5, time_from=0, time_to=0):
-    #param_tmpl = ['S', 'instance-00000001@pyw.novalocal', 'cpu', 'total', 0, 5, 1332897600, 0]
-    #  Do 10 requests, waiting each time for a response
-    for request in range (1,2):
-        # cmd, row_id, cf_str, scf_str, statistic, period=period, time_from=time_from, time_to=time_to
-        param = ['S', row_id, cf_str, scf_str, int(statistic), int(period), int(time_from), int(time_to)]
-        
-        timestr1 = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(float(time_from)))
-        if int(time_to) == 0:
-            timestr2 = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
-        else:
-            timestr2 = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(float(time_to)))
-        print 'statistics info of %s(period=%s)' % (row_id, period)
-        #print 'time range:%s --> %s ' % (timestr1, timestr2)
-        param[4] = 0
-        param[5] = 2
-        r = invoke(api_client, param)
-        print 'SUM=', '(no result)' if r is None else r.values()[0]
-        
-        param[4] = 1
-        r = invoke(api_client, param)
-        print 'MAX=', '(no result)' if r is None else r.values()[0]
-        
-        param[4] = 2
-        r = invoke(api_client, param)
-        print 'MIN=', '(no result)' if r is None else r.values()[0]
-        
-        param[4] = 3
-        r = invoke(api_client, param)
-        print 'AVERAGE=', '(no result)' if r is None else r.values()[0]
-    
+#def invoke_getInstacesList(socket, cf_str):
+#    param = [u'L', cf_str]
+#    r = invoke(socket, param)
+#    if r is None:
+#        r = list()
+#    return r
+#    
+#def invoke_getbykey(socket, row_id):
+#    ret = list()
+#    cmd = list()
+#    cmd.append([u'K', row_id, u"vmnetwork"])
+#    cmd.append([u'K', row_id, u"mem"])
+#    cmd.append([u'K', row_id, u"nic"])
+#    cmd.append([u'K', row_id, u"blk"])
+#    cmd.append([u'G', row_id, u"cpu", u"total"])
+#    
+#    for i in cmd:
+#        cf_str = i[2]
+#        r = invoke(socket, i)
+#        if r is None:
+#            r = dict()
+#        ret.append(r)
+#    return ret
+#    
+#    
+#def invoke_statistics(api_client, row_id, cf_str, scf_str, 
+#                      statistic, period=5, time_from=0, time_to=0):
+#    #param_tmpl = ['S', 'instance-00000001@pyw.novalocal', 'cpu', 'total', 0, 5, 1332897600, 0]
+#    #  Do 10 requests, waiting each time for a response
+#    for request in range (1,2):
+#        # cmd, row_id, cf_str, scf_str, statistic, period=period, time_from=time_from, time_to=time_to
+#        param = ['S', row_id, cf_str, scf_str, int(statistic), int(period), int(time_from), int(time_to)]
+#        
+#        timestr1 = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(float(time_from)))
+#        if int(time_to) == 0:
+#            timestr2 = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
+#        else:
+#            timestr2 = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(float(time_to)))
+#        print 'statistics info of %s(period=%s)' % (row_id, period)
+#        #print 'time range:%s --> %s ' % (timestr1, timestr2)
+#        param[4] = 0
+#        param[5] = 2
+#        r = invoke(api_client, param)
+#        print 'SUM=', '(no result)' if r is None else r.values()[0]
+#        
+#        param[4] = 1
+#        r = invoke(api_client, param)
+#        print 'MAX=', '(no result)' if r is None else r.values()[0]
+#        
+#        param[4] = 2
+#        r = invoke(api_client, param)
+#        print 'MIN=', '(no result)' if r is None else r.values()[0]
+#        
+#        param[4] = 3
+#        r = invoke(api_client, param)
+#        print 'AVERAGE=', '(no result)' if r is None else r.values()[0]
+#    
 
 class ApiClient():
 
@@ -125,7 +140,21 @@ class ApiClient():
         self.context = zmq.Context()
         self.socket = self.context.socket(zmq.REQ)
         self.socket.connect("tcp://%s:%s" % (api_host, api_port))
-        
+    
+    def query_usage_report(self, msg):
+        msg_type = 'kanyun'
+        msg_uuid = str(uuid.uuid4())
+        self.socket.send_multipart([msg_type, msg_uuid,
+                                     json.dumps(msg)])
+        r_msg_type, r_msg_uuid, r_msg_body = self.socket.recv_multipart()
+        result = json.loads(r_msg_body)
+        print result
+        return result
+        if result['code'] == 500:
+            raise Exception()
+        else:
+            return result['load_balancer_ids']
+    
     def set_param(self, key=u'', cf_str=u'', scf_str=u'', 
                   statistic=0, period=5, time_from=0, time_to=0):
         self.cf_str = cf_str
@@ -137,8 +166,24 @@ class ApiClient():
         self.key = key
         
     def invoke(self):
-        param = ['S', self.key, self.cf_str, self.scf_str, int(self.statistic), int(self.period), int(self.time_from), int(self.time_to)]
-        r = invoke(self.socket, param)
+        param = {
+            'method': 'query_usage_report',
+            'args': {
+                'id': self.key,
+                'metric': self.cf_str,
+                'metric_param': 'vnet0',
+                'statistic': 'sum',
+                'period': int(self.period),
+                'timestamp_from': '2012-02-20T12:12:12',
+                'timestamp_to': '2012-02-22T12:12:12',
+            }
+        }
+#        param = ['S', self.key, self.cf_str, self.scf_str, int(self.statistic), int(self.period), int(self.time_from), int(self.time_to)]
+        socket.send_multipart(['kanyun', '0', json.dumps(param)])
+
+        msg_type, uuid, message = socket.recv_multipart()
+        
+        return json.loads(message)
         return r
         
     def get_max(self):
