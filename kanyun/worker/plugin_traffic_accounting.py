@@ -65,7 +65,7 @@ hostname = get_hostname()
 
 def get_traffic_accounting_info():
     """
-    return value format example:
+    return value format example:{'key': ('ip', time, KB)}
     {'116@swsdevp': ('10.0.0.95', 1334555143, '0')}
     """
     
@@ -81,21 +81,21 @@ def get_traffic_accounting_info():
         instance_id = record.split()[9] + hostname
         instance_ip = record.split()[10]
 
-        val = int(out_bytes)
+        val = float(out_bytes)
 
         global _ip_bytes
         if instance_id in _ip_bytes:
             prev_out_bytes = _ip_bytes[instance_id]
-            val = int(out_bytes) - prev_out_bytes
+            val = float(out_bytes) - prev_out_bytes
 
             if val < 0:
-                val = int(out_bytes)
+                val = float(out_bytes)
         else:
-            val = int(out_bytes)
+            val = float(out_bytes)
 
-        _ip_bytes[instance_id] = int(out_bytes)
+        _ip_bytes[instance_id] = float(out_bytes)
 
-        ret[instance_id] = (instance_ip, int(time.time()), str(val))
+        ret[instance_id] = (instance_ip, int(time.time()), str(val / 1024))
 
     return ret
 
