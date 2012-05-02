@@ -26,16 +26,16 @@ class MSG_TYPE:
     AGENT = '3'
     
 class STATISTIC:
-    SUM = 0
-    MAXIMUM = 1
-    MINIMUM = 2
-    AVERAGE = 3
-    SAMPLES = 4
+    SUM = 'sum'
+    MAXIMUM = 'max'
+    MINIMUM = 'min'
+    AVERAGE = 'avg'
+    SAMPLES = 'sam'
 
-statistic_str = dict()
-statistic_str[STATISTIC.SUM] = "SUM"
-statistic_str[STATISTIC.MAXIMUM] = "MAXIMUM"
-statistic_str[STATISTIC.MINIMUM] = "MINIMUM"
-statistic_str[STATISTIC.AVERAGE] = "AVERAGE"
-statistic_str[STATISTIC.SAMPLES] = "SAMPLES"
+#statistic_str = dict()
+#statistic_str[STATISTIC.SUM] = "SUM"
+#statistic_str[STATISTIC.MAXIMUM] = "MAXIMUM"
+#statistic_str[STATISTIC.MINIMUM] = "MINIMUM"
+#statistic_str[STATISTIC.AVERAGE] = "AVERAGE"
+#statistic_str[STATISTIC.SAMPLES] = "SAMPLES"
 

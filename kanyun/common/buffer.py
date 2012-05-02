@@ -41,8 +41,9 @@ class HallBuffer():
 
     def save(self, key, data):
         if isinstance(key, list):
-            key = str(key)    
-        self.buf[key] = [data, 0, time.time(), time.time()]
+            key = str(key)
+        now = time.time()
+        self.buf[key] = [data, 0, now, now]
         return data
         
     def cleanup(self, time_out = 300, max_count = 999):
@@ -50,9 +51,11 @@ class HallBuffer():
         new = dict()
         for key, i in self.buf.iteritems():
             count += 1
+            print i
             if count > max_count:
                 break;
-            if (time.time() - i[2] < time_out):
+            if (time.time() - i[3] < time_out):
+                print "\t", time.time(),"-", i[3],"<",time_out
                 new[key] = i
         self.buf = new
         
@@ -66,14 +69,10 @@ class HallBuffer():
         else:
             return False
 
-        
     def get_buf(self, key):
         if isinstance(key, list):
             key = str(key)
         if self.buf.has_key(key):
-            if time.time() - self.buf[key][3] > 2*60:
-                buf = self.buf.pop(key)
-                return buf[key][0];
             return self.buf[key][0];
         else:
             return None
@@ -87,26 +86,35 @@ class HallBuffer():
             return 0
         
 if __name__ == '__main__':
-    params = ["iphone", 2012]
-    data = "detail of 2012 iphone 4S"
+    params = ["iPhone", 2012]
+    data = "detail of 2012 iPhone 4S"
+    params2 = ["iPad", 2013]
+    data2 = "detail of 2012 iPad"
     
     b = HallBuffer()
     key = str(params)
-    print "Hit rate=", b.get_hit_rate(params), b.get_hit_rate(key)
+    print "Hit rate=", b.get_hit_rate(key), "of", len(b.buf)
     
     if b.hit_test(key):
         print b.get_buf(key)
+        assert False
     else:
         b.save(key, data)
+        time.sleep(3)
+        b.save(str(params2), data2)
         print "not hit."
-    print "Hit rate=", b.get_hit_rate(params), b.get_hit_rate(key)
+    print "Hit rate=", b.get_hit_rate(key), "of", len(b.buf)
         
     if b.hit_test(key):
         print "hit!"
-        print "\t", b.get_buf(key)[0]
+        print "\t", b.get_buf(key)
     else:
         b.save(key, data)
-    print "Hit rate=", b.get_hit_rate(params), b.get_hit_rate(key)
+        assert False
+    print "Hit rate=", b.get_hit_rate(key), "of", len(b.buf)
     
-    b.cleanup(time_out = 0)
-    print "after cleanup, Hit rate=", b.get_hit_rate(params), b.get_hit_rate(key)
+    assert len(b.buf) == 2
+    
+    b.cleanup(time_out = 1)
+    print "after cleanup, Hit rate=", b.get_hit_rate(key), "of", len(b.buf)
+    assert len(b.buf) == 1

@@ -85,18 +85,22 @@ def main():
         if sys.argv[1] in ['--help', "-h", "?"]:
             print "usage:"
             print "\tapi_client"
-            print "\tapi_client <cf>"
-            print "\tapi_client -l"
-            print "\tapi_client -k <id>"
-            print "\tapi_client <id> <cf> <scf>"
-            print "\tapi_client <id> <cf> <scf> <statistic> <period> <time_from> [time_to]"
+#            print "\tapi_client <cf>"
+#            print "\tapi_client -l"
+#            print "\tapi_client -k <id>"
+#            print "\tapi_client <id> <cf> <scf>"
+            print "\tapi_client <id> <cf> <scf> " \
+                   "<[sum]|[max]|[min]|[avg]|[sam]> <period> " \
+                   "<time_from> <time_to>"
             print "example:"
-            print "\tapi_client vmnetwork"
-            print "\tapi_client -k instance-0000002"
-            print "\tapi_client instance-0000002 vmnetwork 10.0.0.2"
-            print "\tapi_client instance-00000012@lx12 cpu"
-            print "\tapi_client instance-00000012@lx12 mem mem_free"
-            print "\tapi-client instance-00000001@pyw.novalocal cpu total 0 5 1332897600 0"
+#            print "\tapi_client vmnetwork"
+#            print "\tapi_client -k instance-0000002"
+#            print "\tapi_client instance-0000002 vmnetwork 10.0.0.2"
+#            print "\tapi_client instance-00000012@lx12 cpu"
+#            print "\tapi_client instance-00000012@lx12 mem mem_free"
+            print "\tapi-client instance-00000001@pyw.novalocal " \
+                   "cpu total sum 5 " \
+                   "2012-02-20T12:12:12 2012-06-20T12:12:12"
             return
         
     config = ConfigParser.ConfigParser()
@@ -110,23 +114,23 @@ def main():
     time.clock()
     
     if len(sys.argv) == 4:
-        row_id, cf_str, scf_str = sys.argv[1], sys.argv[2], sys.argv[3]
+#        row_id, cf_str, scf_str = sys.argv[1], sys.argv[2], sys.argv[3]
 #        rs = api_client.invoke_getbykey2(apiclient.socket, row_id, cf_str, scf_str)
-        show_result2(rs, row_id, cf_str, scf_str)
+#        show_result2(rs, row_id, cf_str, scf_str)
         return
-    elif len(sys.argv) == 2 and sys.argv[1] == '-l':
-        list_instance_ip()
-        return
-    elif len(sys.argv) == 2:
-        cf_str = sys.argv[1]
+#    elif len(sys.argv) == 2 and sys.argv[1] == '-l':
+#        list_instance_ip()
+#        return
+#    elif len(sys.argv) == 2:
+#        cf_str = sys.argv[1]
 #        rs = api_client.invoke_getInstacesList(apiclient.socket, cf_str)
-        show_result(rs, cf_str)
-    elif len(sys.argv) == 3 and sys.argv[1] == '-k':
-        row_id = sys.argv[2]
+#        show_result(rs, cf_str)
+#    elif len(sys.argv) == 3 and sys.argv[1] == '-k':
+#        row_id = sys.argv[2]
 #        rs = apiclient.invoke_getbykey(apiclient.socket, row_id)
-        show_result3(rs, row_id)
-        return
-    elif len(sys.argv) == 3:
+#        show_result3(rs, row_id)
+#        return
+#    elif len(sys.argv) == 3:
 #        if sys.argv[2] == 'nic' or sys.argv[2] == 'blk':
 #            row_id, cf_str, scf_str = sys.argv[1], sys.argv[2], sys.argv[2] + '_incoming'
 #            rs = api_client.invoke_getbykey2(apiclient.socket, row_id, cf_str, scf_str)
@@ -158,39 +162,56 @@ def main():
 #            row_id, cf_str, scf_str = sys.argv[1], sys.argv[2], 'total'
 #            rs = api_client.invoke_getbykey2(apiclient.socket, row_id, cf_str, scf_str)
 #            show_result2(rs, row_id, cf_str, scf_str)
-        return
-    elif len(sys.argv) == 8:
+#        return
+#    elif len(sys.argv) == 8:
 #        row_id, cf_str, scf_str = sys.argv[1], sys.argv[2], sys.argv[3]
 #        statistic, period = int(sys.argv[4]), int(sys.argv[5])
 #        time_from, time_to = int(sys.argv[6]), int(sys.argv[7])
 #        apiclient.set_param(row_id, cf_str, scf_str, statistic, period, time_from, time_to)
 #        rs = apiclient.get_result(statistic)
 #        show_result4(rs, row_id, cf_str, scf_str, statistic, time_from, time_to)
-        return
-    elif len(sys.argv) == 7:
+#        return
+#    elif len(sys.argv) == 7:
 #        row_id, cf_str, scf_str = sys.argv[1], sys.argv[2], sys.argv[3]
 #        statistic, period = int(sys.argv[4]), int(sys.argv[5])
 #        time_from, time_to = int(sys.argv[6]), 0
 #        apiclient.set_param(row_id, cf_str, scf_str, statistic, period, time_from, time_to)
 #        rs = apiclient.get_result(statistic)
 #        show_result4(rs, row_id, cf_str, scf_str, statistic, time_from, time_to)
-        return
-    else:
+#        return
+    elif len(sys.argv) == 8:
+        row_id, cf_str, scf_str = sys.argv[1], sys.argv[2], sys.argv[3]
+        statistic, period = sys.argv[4], int(sys.argv[5])
+        time_from, time_to = sys.argv[6], sys.argv[7]
         rs = apiclient.query_usage_report({
                                     'method': 'query_usage_report',
                                     'args': {
-                                        'id': 'instance-00000001@pyw.novalocal',
-                                        'metric': 'cpu',
-                                        'metric_param': 'total',
-                                        'statistic': 'max',
-                                        'period': 5,
-                                        'timestamp_from': '2012-02-20T12:12:12',
-                                        'timestamp_to': '2012-05-22T12:12:12',
+                                        'id': row_id,
+                                        'metric': cf_str,
+                                        'metric_param': scf_str,
+                                        'statistic': statistic,
+                                        'period': period,
+                                        'timestamp_from': time_from,
+                                        'timestamp_to': time_to,
                                         }
                                     })
         show_result2(rs, "instance-00000001@pyw.novalocal", "cpu", "total")
         return
-
+    else:
+        rs = apiclient.query_usage_report({
+                                        'method': 'query_usage_report',
+                                        'args': {
+                                            'id': 'instance-00000001@pyw.novalocal',
+                                            'metric': 'cpu',
+                                            'metric_param': 'total',
+                                            'statistic': 'max',
+                                            'period': 5,
+                                            'timestamp_from': '2012-02-20T12:12:12',
+                                            'timestamp_to': '2012-05-22T12:12:12',
+                                            }
+                                        })
+        show_result2(rs, "instance-00000001@pyw.novalocal", "cpu", "total")
+        return
     
 if __name__ == '__main__':
     main()

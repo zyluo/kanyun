@@ -33,7 +33,6 @@ example:
 [u'S', u'instance-00000001@pyw.novalocal', u'cpu', u'total', 0, 5, 1332897600, 0]
 """
 
-param_tmpl = ['S', u'instance-00000001@pyw.novalocal', u'cpu', u'total', 0, 5, 1332897600, 0]
 param_tmpl = {
     'method': 'query_usage_report',
     'args': {
@@ -140,7 +139,8 @@ class ApiClient():
         self.context = zmq.Context()
         self.socket = self.context.socket(zmq.REQ)
         self.socket.connect("tcp://%s:%s" % (api_host, api_port))
-    
+        
+    ###################### Public API interface #########################
     def query_usage_report(self, msg):
         msg_type = 'kanyun'
         msg_uuid = str(uuid.uuid4())
@@ -150,19 +150,26 @@ class ApiClient():
         result = json.loads(r_msg_body)
         print result
         return result
-        if result['code'] == 500:
-            raise Exception()
-        else:
-            return result['load_balancer_ids']
-    
+#        if result['code'] == 500:
+#            raise Exception()
+#        else:
+#            return result['load_balancer_ids']
+    ################## End public API interface ########################
+        
     def set_param(self, key=u'', cf_str=u'', scf_str=u'', 
-                  statistic=0, period=5, time_from=0, time_to=0):
+                  statistic='avg', period=5, time_from=None, time_to=None):
         self.cf_str = cf_str
         self.scf_str = scf_str
         self.statistic = statistic
         self.period = period
-        self.time_from = time_from
-        self.time_to = time_to
+        if time_from is None:
+            self.time_from = time.strftime('%Y-%m-%dT%H:%M:%S')
+        else:
+            self.time_from = time_from
+        if time_to is None:
+            self.time_to = time.strftime('%Y-%m-%dT%H:%M:%S')
+        else:
+            self.time_to = time_to
         self.key = key
         
     def invoke(self):
@@ -171,20 +178,18 @@ class ApiClient():
             'args': {
                 'id': self.key,
                 'metric': self.cf_str,
-                'metric_param': 'vnet0',
-                'statistic': 'sum',
+                'metric_param': self.scf_str,
+                'statistic': self.statistic,
                 'period': int(self.period),
-                'timestamp_from': '2012-02-20T12:12:12',
-                'timestamp_to': '2012-02-22T12:12:12',
+                'timestamp_from': self.time_from,
+                'timestamp_to': self.time_to,
             }
         }
-#        param = ['S', self.key, self.cf_str, self.scf_str, int(self.statistic), int(self.period), int(self.time_from), int(self.time_to)]
+        
         socket.send_multipart(['kanyun', '0', json.dumps(param)])
-
         msg_type, uuid, message = socket.recv_multipart()
         
         return json.loads(message)
-        return r
         
     def get_max(self):
         self.period = STATISTIC.SUM
@@ -211,12 +216,12 @@ class ApiClient():
         r = self.invoke()
         return r
         
-    def getbykey(self, key, cf_str=None, scf_str=None):
-        if cf_str is None or scf_str is None:
-            return invoke_getbykey(self.socket, key)
-        else:
-            return invoke_getbykey2(self.socket, row_id, cf_str, scf_str)
-            
-    def getlist(self, cf_str):
-        return invoke_getInstacesList(self.socket, cf_str)
+#    def getbykey(self, key, cf_str=None, scf_str=None):
+#        if cf_str is None or scf_str is None:
+#            return invoke_getbykey(self.socket, key)
+#        else:
+#            return invoke_getbykey2(self.socket, row_id, cf_str, scf_str)
+#            
+#    def getlist(self, cf_str):
+#        return invoke_getInstacesList(self.socket, cf_str)
         

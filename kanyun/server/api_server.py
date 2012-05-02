@@ -257,7 +257,7 @@ class ApiServer():
         time_to default=0(now)"""
         """
         {
-            'id': 'instance00001'
+            'id': 'instance00001',
             'metric': 'network',
             'metric_param': 'vnet0',
             'statistic': 'sum',
@@ -289,6 +289,7 @@ class ApiServer():
         bufkey = str([row_id, cf_str, scf_str, 
                       statistic, period, time_from, time_to])
         if self.buf.hit_test(bufkey):
+            print "buffer hit:", bufkey
             return self.buf.get_buf(bufkey)
             
         ret_len = 0
@@ -309,7 +310,9 @@ class ApiServer():
             ret_len = 0
             
         result = ret, ret_len, all_data
-        self.buf.save(bufkey, result)
+        if (time.time() - time_to > 120):
+            self.buf.cleanup()
+            self.buf.save(bufkey, result)
         return result
 
 
