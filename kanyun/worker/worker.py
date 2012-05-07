@@ -151,7 +151,7 @@ class Worker:
         
     def end(self):
         info = [self.worker_id, time.time(), 0]
-        self.send([MSG_TYPE.HEART_BEAT, json.dumps(info)])
+        self.send(MSG_TYPE.HEART_BEAT, 0, json.dumps(info))
     
 running = True
 
