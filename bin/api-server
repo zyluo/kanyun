@@ -33,7 +33,7 @@ def on_message_receive(api, socket, msg_type, msg_uuid, msg):
     if msg['method'] == 'query_usage_report':
         #[u'S', u'instance-00000001@pyw.novalocal', u'cpu', u'total', 0, 5, 1332897600, 0]
         print '*' * 60
-        print "recv:", msg
+        print "query_usage_report:", msg['args']
 
         (rs, count, _) = api.query_usage_report(msg['args'], **(msg['args']))
         ret = {'code': 0,
