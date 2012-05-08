@@ -247,6 +247,7 @@ class ApiServer():
         return rs, count, False if (count == 20000) else True
 
     def query_usage_report(self, args, **kwargs):
+# TODO: how to use kwargs?
 #    def query_usage_report(self, arg, id=None, metric='cpu', 
 #                           metric_param='total',
 #                           statistic='avg', period=5,

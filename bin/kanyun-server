@@ -24,11 +24,16 @@ import traceback
 import ConfigParser
 import json
 import zmq
+from kanyun.common.app import *
 from kanyun.server import data_server
 from kanyun.server.data_server import MSG_TYPE
 
 from kanyun.database.cassadb import CassaDb
 from kanyun.server.plugin_agent_srv import *
+
+"""
+kanyun data server.
+"""
 
 running = True
 config = ConfigParser.ConfigParser()
@@ -45,33 +50,23 @@ if __name__ == '__main__':
     autotasks.append(data_server.autotask_heartbeat)
     # 
 
-    if len(config.read("kanyun.conf"))==0:
-        config.read("/etc/kanyun.conf")
-    server_cfg = dict(config.items('server'))
+    app = App(conf="kanyun.conf", log="/tmp/kanyun-server.log")
+    logger = app.get_logger()
+    cfg = app.get_cfg('server')
+    
     data_server.register_signal()
     context = zmq.Context()
 
-    # Socket to receive messages on
-    handler = context.socket(zmq.REP)
-    handler.bind("tcp://%(handler_host)s:%(handler_port)s" % server_cfg)
-    print "listen tcp://%(handler_host)s:%(handler_port)s" % server_cfg
-
-    # Socket to send messages on
-    broadcast = context.socket(zmq.PUB)
-    broadcast.bind("tcp://%(broadcast_host)s:%(broadcast_port)s" % server_cfg)
-    print "listen tcp://%(broadcast_host)s:%(broadcast_port)s" % server_cfg
-
     # Socket with direct access to the feedback: used to syncronize start of batch
-    feedback = context.socket(zmq.PULL)
-    feedback.bind("tcp://%(feedback_host)s:%(feedback_port)s" % server_cfg)
-    print "listen tcp://%(feedback_host)s:%(feedback_port)s" % server_cfg
+    socket = context.socket(zmq.PULL)
+    socket.bind("tcp://%(host)s:%(port)s" % cfg)
+    print "listen tcp://%(host)s:%(port)s" % cfg
 
     poller = zmq.Poller()
-    poller.register(handler, zmq.POLLIN | zmq.POLLOUT)
-    poller.register(feedback, zmq.POLLIN)
+    poller.register(socket, zmq.POLLIN)
 
     # data DB
-    db = CassaDb('data', server_cfg['db_host'])
+    db = CassaDb('data', cfg['db_host'])
 
     while True:
         try:
@@ -80,9 +75,9 @@ if __name__ == '__main__':
             pass
         
         # parse the data from worker and save to database
-        if socks.get(feedback) == zmq.POLLIN:
+        if socks.get(socket) == zmq.POLLIN:
             try:
-                msg_type, report = feedback.recv_multipart()
+                msg_type, report = socket.recv_multipart()
             except zmq.core.error.ZMQError:
                 pass
             

@@ -41,6 +41,8 @@ def show_result2(rs, row_id, cf_str, scf_str):
     print rs
     if rs.has_key("data"):
         rs = rs['data']
+        if rs is None:
+            return
         for k, i in rs.iteritems():
             print "{%s:%s}" % (k, i)
         print "%d results of key=%s,cf=%s,scf=%s" % (len(rs), row_id, cf_str, scf_str)

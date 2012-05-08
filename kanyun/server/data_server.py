@@ -28,6 +28,7 @@ import zmq
 from kanyun.database.cassadb import CassaDb
 import plugin_agent_srv
 from kanyun.common.const import *
+from kanyun.common.app import *
 
 """
 Save the vm's system info data to db.
@@ -36,11 +37,8 @@ protocol:
 """
 living_status = dict()
 
-
-logger = logging.getLogger()
-handler = logging.FileHandler("/tmp/kanyun-server.log")
-logger.addHandler(handler)
-logger.setLevel(logging.NOTSET)
+app = App(conf="kanyun.conf", log="/tmp/kanyun-server.log")
+logger = app.get_logger()
             
 class LivingStatus():
 

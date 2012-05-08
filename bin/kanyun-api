@@ -25,6 +25,7 @@ import ConfigParser
 import json
 import zmq
 from kanyun.common.const import *
+from kanyun.common.app import *
 from kanyun.server import api_server
 
 from kanyun.database.cassadb import CassaDb
@@ -91,20 +92,18 @@ def on_message_receive(api, socket, msg_type, msg_uuid, msg):
 
 
 if __name__ == '__main__':
-    config = ConfigParser.ConfigParser()
-    if len(config.read("kanyun.conf")) == 0:
-        config.read("/etc/kanyun.conf")
-    api_cfg = dict(config.items('api'))
+    app = App(conf="kanyun.conf", log="/tmp/kanyun-api.log")
+    logger = app.get_logger()
+    cfg = app.get_cfg('api')
     
-    api = api_server.ApiServer(db_host=api_cfg['db_host'])
+    api = api_server.ApiServer(db_host=cfg['db_host'])
 
     context = zmq.Context()
     socket = context.socket(zmq.REP)
-    socket.bind("tcp://%(api_host)s:%(api_port)s" % api_cfg)
-    print "listen tcp://%(api_host)s:%(api_port)s" % api_cfg
+    socket.bind("tcp://%(api_host)s:%(api_port)s" % cfg)
+    print "listen tcp://%(api_host)s:%(api_port)s" % cfg
 
     while True:
-#        message = api_socket.recv()
         msg_type, msg_uuid, message = socket.recv_multipart()
         try:
             msg = json.loads(message)

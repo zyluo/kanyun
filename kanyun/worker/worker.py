@@ -25,6 +25,7 @@ import logging
 import traceback
 import ConfigParser
 
+from kanyun.common.app import *
 from kanyun.common.const import *
 """
 protocol:
@@ -73,21 +74,29 @@ class Worker:
     working_rate = 1000
     
     def __init__(self, context=None, feedback_host='127.0.0.1', 
-                 feedback_port=5559, logger=None, worker_id='Black'):
+                 feedback_port=5559, worker_id=None):
         """ context is zeroMQ socket context"""
         self.plugins = list()
         self.last_work_min = None # this value is None until first update
         self.update_time()
-        self.logger = logger
+        self.app = App(conf="kanyun.conf")
+        self.logger = self.app.get_logger()
+        self.cfg = self.app.get_cfg('worker')
+        server_host = '127.0.0.1'
+        server_port = "5551"
         self.worker_id = worker_id
-        if self.logger is None:
-            self.logger = logging.getLogger()
-            handler = logging.FileHandler("/tmp/kanyun-worker.log")
-            self.logger.addHandler(handler)
-            self.logger.setLevel(logging.NOTSET)
-        if not (context is None):
-            self.feedback = context.socket(zmq.PUSH)
-            self.feedback.connect("tcp://%s:%s" % (feedback_host, feedback_port))
+        
+        if worker_id is None and self.cfg.has_key('id'):
+            self.worker_id = self.cfg['id']
+        if self.cfg.has_key('dataserver_host'):
+            server_host = self.cfg['dataserver_host']
+        if self.cfg.has_key('dataserver_port'):
+            server_port = self.cfg['dataserver_port']
+            
+        context = zmq.Context()
+        self.socket = context.socket(zmq.PUSH)
+        self.socket.connect("tcp://%s:%s" % (server_host, server_port))
+        print "server is %s:%s" % (server_host, server_port)
     
     def clear_plugin(self):
         self.plugins = list()
@@ -110,7 +119,7 @@ class Worker:
     def send(self, msg):
         """PUSH the msg(msg is a list)"""
         self.logger.debug('send:%s' % msg)
-        self.feedback.send_multipart(msg)
+        self.socket.send_multipart(msg)
     
     def get_leaving_time(self):
         """return leaving seconds before next work time"""
@@ -153,23 +162,4 @@ class Worker:
         info = [self.worker_id, time.time(), 0]
         self.send(MSG_TYPE.HEART_BEAT, 0, json.dumps(info))
     
-running = True
-
-
-def SignalHandler(sig, id):
-    global running
-    
-    if sig == signal.SIGUSR1:
-        running = False
-    elif sig == signal.SIGUSR2:
-        pass
-    elif sig == signal.SIGINT:
-        print 'Waiting for quit...'
-        running = False
-
-
-def register_signal():
-    signal.signal(signal.SIGUSR1, SignalHandler)
-    signal.signal(signal.SIGUSR2, SignalHandler)
-    signal.signal(signal.SIGINT, SignalHandler)
 
