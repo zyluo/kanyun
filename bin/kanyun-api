@@ -44,6 +44,17 @@ def on_message_receive(api, socket, msg_type, msg_uuid, msg):
         socket.send_multipart(
                         [msg_type, msg_uuid, json.dumps(ret)]
                         )
+    elif msg['method'] == 'update_alert_policy':
+        print '*' * 60
+        print "update_alert_policy:", msg['args']
+        
+        ret = {'code': 0,
+         'message': 'success',
+         'data':None
+        }
+        socket.send_multipart(
+                        [msg_type, msg_uuid, json.dumps(ret)]
+                        )
     elif msg[0] == 'G':
         print '*' * 60
         print "recv:", msg

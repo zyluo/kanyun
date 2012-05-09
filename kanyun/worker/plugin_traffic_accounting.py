@@ -68,34 +68,39 @@ def get_traffic_accounting_info():
     return value format example:{'key': ('ip', time, KB)}
     {'116@swsdevp': ('10.0.0.95', 1334555143, '0')}
     """
+    global _ip_bytes
     
     records = subprocess.check_output(shlex.split(CMD),
                                       stderr=subprocess.STDOUT)
     lines = records.splitlines()[2:]
     acct_records = [line for line in lines if "accounting rule" in line]
     
-    ret = {}
+    ret = dict()
 
     for record in acct_records:
         out_bytes = record.split()[0].partition(':')[2][0:-1]
         instance_id = record.split()[9] + hostname
         instance_ip = record.split()[10]
 
+        # Is total out bytes(sum of history)
         val = float(out_bytes)
 
-        global _ip_bytes
         if instance_id in _ip_bytes:
             prev_out_bytes = _ip_bytes[instance_id]
             val = float(out_bytes) - prev_out_bytes
 
             if val < 0:
+                # error
+                print "get_traffic_accounting_info error", float(out_bytes), prev_out_bytes
                 val = float(out_bytes)
         else:
-            val = float(out_bytes)
+            # discard the first value
+            val = 0
 
+        # save current value
         _ip_bytes[instance_id] = float(out_bytes)
 
-        ret[instance_id] = (instance_ip, int(time.time()), str(val / 1024))
+        ret[instance_id] = (instance_ip, int(time.time()), str(val))
 
     return ret
 
