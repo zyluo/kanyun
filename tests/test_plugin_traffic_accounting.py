@@ -109,7 +109,7 @@ class PluginTrafficAccountingTest(unittest.TestCase):
 
     def testWorkerClass(self):
         print 'Unit test of worker.'
-        self.CMD = "iptables-save -t filter -c"
+        self.CMD = "sudo iptables-save -t filter -c"
         self.cmd = shlex.split(self.CMD)
         self.mox.StubOutWithMock(subprocess, 'check_output')
         subprocess.check_output(self.cmd, stderr=subprocess.STDOUT).AndReturn(SubprocessCheckOutputMox())

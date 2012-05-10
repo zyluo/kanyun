@@ -128,7 +128,6 @@ class WorkerTest(unittest.TestCase):
         w = Worker(context = ZmqContextMox())
         msg = [1, json.dumps(["1", {86:2012}])]
         w.send(msg)
-        assert w.feedback.count == len(msg)
         self.mox.VerifyAll()
         print "send test \t[\033[1;33mOK\033[0m]"
         

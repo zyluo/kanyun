@@ -325,7 +325,7 @@ class ApiServer():
         if (not isinstance(row_id, unicode) \
             or not isinstance(cf_str, unicode) \
             or not isinstance(scf_str, unicode) \
-            or not isinstance(statistic, int) \
+            or not isinstance(statistic, basestring) \
             or not isinstance(period, int) \
             or not isinstance(time_from, int) \
             or not isinstance(time_to, int)):

@@ -81,7 +81,6 @@ if __name__ == '__main__':
     print 'Unit test of worker.'
     DBTestSuite = unittest.TestSuite()
     DBTestSuite.addTest(CassaDBTest("ObjectTest"))
-    DBTestSuite.addTest(CassaDBTest("GetTest"))
         
     runner = unittest.TextTestRunner()
     runner.run(DBTestSuite)

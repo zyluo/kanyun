@@ -93,8 +93,12 @@ class Worker:
         if self.cfg.has_key('dataserver_port'):
             server_port = self.cfg['dataserver_port']
             
-        context = zmq.Context()
-        self.socket = context.socket(zmq.PUSH)
+        ctx = None
+        if context is None:
+            ctx = zmq.Context()
+        else:
+            ctx = context
+        self.socket = ctx.socket(zmq.PUSH)
         self.socket.connect("tcp://%s:%s" % (server_host, server_port))
         print "server is %s:%s" % (server_host, server_port)
     

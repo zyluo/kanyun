@@ -157,7 +157,7 @@ class TestApiServerClass(unittest.TestCase):
         time_to = 0
         cf_str = u'cpu'
         scf_str = u'total'
-        statistic = STATISTIC.SUM
+        statistic = u'sum'
         
         apiServer = api_server.ApiServer()
         self.mox.StubOutWithMock(apiServer, 'get_data')
@@ -184,7 +184,7 @@ class TestApiServerClass(unittest.TestCase):
         time_to = 0
         cf_str = u'cpu'
         scf_str = u'total'
-        statistic = STATISTIC.MAXIMUM
+        statistic = 'max'
         
         apiServer = api_server.ApiServer()
         self.mox.StubOutWithMock(apiServer, 'get_data')
@@ -211,7 +211,7 @@ class TestApiServerClass(unittest.TestCase):
         time_to = 0
         cf_str = u'cpu'
         scf_str = u'total'
-        statistic = STATISTIC.MINIMUM
+        statistic = 'min'
         
         apiServer = api_server.ApiServer()
         self.mox.StubOutWithMock(apiServer, 'get_data')
@@ -238,7 +238,7 @@ class TestApiServerClass(unittest.TestCase):
         time_to = 0
         cf_str = u'cpu'
         scf_str = u'total'
-        statistic = STATISTIC.AVERAGE
+        statistic = 'avg'
         
         apiServer = api_server.ApiServer()
         self.mox.StubOutWithMock(apiServer, 'get_data')
@@ -263,7 +263,7 @@ class TestApiServerClass(unittest.TestCase):
         time_to = 0
         cf_str = u'cpu'
         scf_str = u'total'
-        statistic = STATISTIC.AVERAGE
+        statistic = 'avg'
         
         apiServer = api_server.ApiServer()
         self.mox.StubOutWithMock(apiServer, 'get_data')
