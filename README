@@ -1,0 +1,9 @@
+Overview
+===========================
+
+The kanyun is a monitoring system of openstack.
+kanyun是一个openstack的监控系统。它可以监控虚拟机的CPU使用率、内存使用、网络流量和磁盘读写情况。
+kanyun包括worker、data-server、API-server三个模块。
+worker模块负责采集监控数据并交由data-server进行存储，APIserver则提供进行查询和统计的外部接口。
+
+kanyun采集的数据可以由dashboard进行展示，或者由计费系统（如dough）计费使用。
