@@ -1,5 +1,5 @@
 [log]
-file=/tmp/kanyun.log
+file: /tmp/kanyun.log
 
 [server]
 host: *

@@ -65,7 +65,7 @@ hostname = get_hostname()
 
 def get_traffic_accounting_info():
     """
-    return value format example:{'key': ('ip', time, KB)}
+    return value format example:{'key': ('ip', time, bytes)}
     {'116@swsdevp': ('10.0.0.95', 1334555143, '0')}
     """
     global _ip_bytes
