@@ -33,6 +33,13 @@ example:
 [u'S', u'instance-00000001@pyw.novalocal', u'cpu', u'total', 0, 5, 1332897600, 0]
 """
 
+PROTOCOL_REQUEST = {
+    'method': '',
+    'args':  {
+            
+        }
+    }
+    
 param_tmpl = {
     'method': 'query_usage_report',
     'args': {
@@ -148,13 +155,22 @@ class ApiClient():
                                      json.dumps(msg)])
         r_msg_type, r_msg_uuid, r_msg_body = self.socket.recv_multipart()
         result = json.loads(r_msg_body)
-        print result
         return result
-#        if result['code'] == 500:
-#            raise Exception()
-#        else:
-#            return result['load_balancer_ids']
+    def list_instaces(self, metric):
+        data = PROTOCOL_REQUEST
+        data['method'] = "list_instance"
+        data['args']['metric'] = metric
+        resp = self.send(data)
+        return resp
     ################## End public API interface ########################
+    def send(self, data):
+        msg_type = 'kanyun'
+        msg_uuid = str(uuid.uuid4())
+        self.socket.send_multipart([msg_type, msg_uuid,
+                                     json.dumps(data)])
+        r_msg_type, r_msg_uuid, r_msg_body = self.socket.recv_multipart()
+        result = json.loads(r_msg_body)
+        return result
         
     def set_param(self, key=u'', cf_str=u'', scf_str=u'', 
                   statistic='avg', period=5, time_from=None, time_to=None):

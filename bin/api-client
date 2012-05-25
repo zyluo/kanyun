@@ -28,12 +28,19 @@ from kanyun.client import api_client
 from kanyun.common import const
 
 
-#def show_result(rs, cf_str):
-#    for i in rs:
-#        print "%s" % (i)
-#    print "%d results of cf=%s" % (len(rs), cf_str)
-#    print "spend", time.clock(), "seconds"
-#    
+def show_result(rs):
+    if rs is None:
+        return
+    print rs
+    if rs.has_key("data"):
+        rs = rs['data']
+        if rs is None:
+            return
+        for k, i in rs.iteritems():
+            print "{%s:%s}" % (k, i)
+        print "%d results" % (len(rs))
+        print "spend", time.clock(), "seconds"
+
     
 def show_result2(rs, row_id, cf_str, scf_str):
     if rs is None:
@@ -48,63 +55,21 @@ def show_result2(rs, row_id, cf_str, scf_str):
         print "%d results of key=%s,cf=%s,scf=%s" % (len(rs), row_id, cf_str, scf_str)
         print "spend", time.clock(), "seconds"
 
-
-#def show_result3(rs, row_id):
-#    for r in rs:
-#        for k, i in r.iteritems():
-#            print "%s %d results" % (k, len(i))
-#            print i
-#    print "%d results of key=%s" % (len(rs), row_id)
-#    print "spend", time.clock(), "seconds"
-#    
-#    
-#def show_result4(rs, row_id='', cf_str='', scf_str='', 
-#                 statistic=0, time_from=0, time_to=0):
-#    strs = "Result"
-#    if const.statistic_str.has_key(statistic):
-#        strs = const.statistic_str[statistic]
-#        
-#    timestr1 = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(float(time_from)))
-#    if int(time_to) == 0:
-#        timestr2 = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
-#    else:
-#        timestr2 = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(float(time_to)))
-#    print 'statistics info of %s(cf=%s)' % (row_id, cf_str)
-#    print 'time range:%s --> %s ' % (timestr1, timestr2)
-#    print strs + ":"
-#    if rs is None:
-#        print '\tno result'
-#    else:
-#        rs = OrderedDict(sorted(rs.items(), key=lambda t: t[0]))
-#        for k, i in rs.iteritems():
-#            timestr = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(float(k)))
-#            print "\t", timestr, "=", i
-#    print "spend", time.clock(), "seconds"
-#    
-#def list_instance_ip():
-#    # achieve in listip
-#    print 'use listip instead'
-#    return
-
-
 def main():
     if len(sys.argv) == 2:
         if sys.argv[1] in ['--help', "-h", "?"]:
             print "usage:"
             print "\tapi_client"
-#            print "\tapi_client <cf>"
-#            print "\tapi_client -l"
-#            print "\tapi_client -k <id>"
-#            print "\tapi_client <id> <cf> <scf>"
-            print "\tapi_client <id> <cf> <scf> " \
-                   "<[sum]|[max]|[min]|[avg]|[sam]> <period> " \
+            print "\tapi_client -l <metric>"
+            print "\tapi_client <id> vmnetwork <IP> <option> <period> " \
                    "<time_from> <time_to>"
+            print "\tapi_client <id> <cf> <scf> <option> <period> " \
+                   "<time_from> <time_to>"
+            print "option:"
+            print "\t[sum]|[max]|[min]|[avg]|[sam]"
+            print "metric:"
+            print "\t[vmnetwork]|[cpu]|[mem_max]|[mem_free]|[nic_read]|[blk_read]"
             print "example:"
-#            print "\tapi_client vmnetwork"
-#            print "\tapi_client -k instance-0000002"
-#            print "\tapi_client instance-0000002 vmnetwork 10.0.0.2"
-#            print "\tapi_client instance-00000012@lx12 cpu"
-#            print "\tapi_client instance-00000012@lx12 mem mem_free"
             print "\tapi-client instance-00000001@pyw.novalocal " \
                    "cpu total sum 5 " \
                    "2012-02-20T12:12:12 2012-06-20T12:12:12"
@@ -120,72 +85,12 @@ def main():
     apiclient = api_client.ApiClient(cfg['api_host'], cfg['api_port'])
     time.clock()
     
-    if len(sys.argv) == 4:
-#        row_id, cf_str, scf_str = sys.argv[1], sys.argv[2], sys.argv[3]
-#        rs = api_client.invoke_getbykey2(apiclient.socket, row_id, cf_str, scf_str)
-#        show_result2(rs, row_id, cf_str, scf_str)
+    if len(sys.argv) == 3:
+        if sys.argv[1] == '-l':
+            metric = sys.argv[2]
+            rs = apiclient.list_instaces(metric=metric)
+            show_result(rs)
         return
-#    elif len(sys.argv) == 2 and sys.argv[1] == '-l':
-#        list_instance_ip()
-#        return
-#    elif len(sys.argv) == 2:
-#        cf_str = sys.argv[1]
-#        rs = api_client.invoke_getInstacesList(apiclient.socket, cf_str)
-#        show_result(rs, cf_str)
-#    elif len(sys.argv) == 3 and sys.argv[1] == '-k':
-#        row_id = sys.argv[2]
-#        rs = apiclient.invoke_getbykey(apiclient.socket, row_id)
-#        show_result3(rs, row_id)
-#        return
-#    elif len(sys.argv) == 3:
-#        if sys.argv[2] == 'nic' or sys.argv[2] == 'blk':
-#            row_id, cf_str, scf_str = sys.argv[1], sys.argv[2], sys.argv[2] + '_incoming'
-#            rs = api_client.invoke_getbykey2(apiclient.socket, row_id, cf_str, scf_str)
-#            show_result2(rs, row_id, cf_str, scf_str)
-#            
-#            row_id, cf_str, scf_str = sys.argv[1], sys.argv[2], sys.argv[2] + '_outgoing'
-#            rs = api_client.invoke_getbykey2(apiclient.socket, row_id, cf_str, scf_str)
-#            show_result2(rs, row_id, cf_str, scf_str)
-#            return
-#        elif sys.argv[2] == 'blk':
-#            row_id, cf_str, scf_str = sys.argv[1], sys.argv[2], sys.argv[2] + '_read'
-#            rs = api_client.invoke_getbykey2(apiclient.socket, row_id, cf_str, scf_str)
-#            show_result2(rs, row_id, cf_str, scf_str)
-#            
-#            row_id, cf_str, scf_str = sys.argv[1], sys.argv[2], sys.argv[2] + '_write'
-#            rs = api_client.invoke_getbykey2(apiclient.socket, row_id, cf_str, scf_str)
-#            show_result2(rs, row_id, cf_str, scf_str)
-#            return
-#        elif sys.argv[2] == 'mem':
-#            row_id, cf_str, scf_str = sys.argv[1], sys.argv[2], sys.argv[2] + '_free'
-#            rs = api_client.invoke_getbykey2(apiclient.socket, row_id, cf_str, scf_str)
-#            show_result2(rs, row_id, cf_str, scf_str)
-#            
-#            row_id, cf_str, scf_str = sys.argv[1], sys.argv[2], sys.argv[2] + '_max'
-#            rs = api_client.invoke_getbykey2(apiclient.socket, row_id, cf_str, scf_str)
-#            show_result2(rs, row_id, cf_str, scf_str)
-#            return
-#        else:
-#            row_id, cf_str, scf_str = sys.argv[1], sys.argv[2], 'total'
-#            rs = api_client.invoke_getbykey2(apiclient.socket, row_id, cf_str, scf_str)
-#            show_result2(rs, row_id, cf_str, scf_str)
-#        return
-#    elif len(sys.argv) == 8:
-#        row_id, cf_str, scf_str = sys.argv[1], sys.argv[2], sys.argv[3]
-#        statistic, period = int(sys.argv[4]), int(sys.argv[5])
-#        time_from, time_to = int(sys.argv[6]), int(sys.argv[7])
-#        apiclient.set_param(row_id, cf_str, scf_str, statistic, period, time_from, time_to)
-#        rs = apiclient.get_result(statistic)
-#        show_result4(rs, row_id, cf_str, scf_str, statistic, time_from, time_to)
-#        return
-#    elif len(sys.argv) == 7:
-#        row_id, cf_str, scf_str = sys.argv[1], sys.argv[2], sys.argv[3]
-#        statistic, period = int(sys.argv[4]), int(sys.argv[5])
-#        time_from, time_to = int(sys.argv[6]), 0
-#        apiclient.set_param(row_id, cf_str, scf_str, statistic, period, time_from, time_to)
-#        rs = apiclient.get_result(statistic)
-#        show_result4(rs, row_id, cf_str, scf_str, statistic, time_from, time_to)
-#        return
     elif len(sys.argv) == 8:
         row_id, cf_str, scf_str = sys.argv[1], sys.argv[2], sys.argv[3]
         statistic, period = sys.argv[4], int(sys.argv[5])
@@ -202,7 +107,7 @@ def main():
                                         'timestamp_to': time_to,
                                         }
                                     })
-        show_result2(rs, "instance-00000001@pyw.novalocal", "cpu", "total")
+        show_result2(rs, row_id=row_id, cf_str=cf_str, scf_str=scf_str)
         return
     else:
         rs = apiclient.query_usage_report({

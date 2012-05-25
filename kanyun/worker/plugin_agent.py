@@ -74,8 +74,11 @@ class LibvirtMonitor(object):
         infos_by_dom_name = dict()
         for dom_id in self.conn.listDomainsID():
             dom_conn = self.conn.lookupByID(dom_id)
-            dom_key = "%s@%s" % (dom_conn.name(), self.hostname)
+#            dom_key = "%s@%s" % (dom_conn.name(), self.hostname)
+            dom_key = dom_conn.name()
             dom_xml = dom_conn.XMLDesc(0)
+            print "-" * 60
+            print dom_key
             # get infos
             infos = list()
             # get domain's cpu, memory info
@@ -139,7 +142,7 @@ class LibvirtMonitor(object):
         #%CPU = 100 * cpu_time_diff / (t * nr_cores * 10^9)
         #print "%d * %f / (%d * 1 * %d)" % (100.0, self.diffs[dom_id].get_diff(), self.diffs[dom_id].get_time_pass(), 1e9)
         cpu = 100.0 * self.diffs[dom_id].get_diff() / (self.diffs[dom_id].get_time_pass() * 1 * 1e9)
-        print dom_id, 'cpu usage:', cpu, '%, cpu_time:', dom_cpu_time, "mem:", mem_free, "/", dom_max_mem_kb
+        print "dom_id:",dom_id, 'cpu:', cpu, '%, cpu_time:', dom_cpu_time, "mem:", mem_free, "/", dom_max_mem_kb
         # NOTE(lzyeval): libvirt currently can only see total of all vcpu time
 #        return [('cpu', 'total', (timestamp, dom_cpu_time)),
 #                ('mem', 'total', (timestamp, dom_max_mem_kb, dom_memory_kb))]

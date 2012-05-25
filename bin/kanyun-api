@@ -30,76 +30,24 @@ from kanyun.server import api_server
 
 from kanyun.database.cassadb import CassaDb
 
-def on_message_receive(api, socket, msg_type, msg_uuid, msg):
-    if msg['method'] == 'query_usage_report':
-        #[u'S', u'instance-00000001@pyw.novalocal', u'cpu', u'total', 0, 5, 1332897600, 0]
+def on_message_receive(api, method, arg):
+    if method == 'query_usage_report':
         print '*' * 60
         print "query_usage_report:", msg['args']
 
         (rs, count, _) = api.query_usage_report(msg['args'], **(msg['args']))
-        ret = {'code': 0,
-         'message': 'success',
-         'data':rs
-        }
-        socket.send_multipart(
-                        [msg_type, msg_uuid, json.dumps(ret)]
-                        )
-    elif msg['method'] == 'update_alert_policy':
+        return rs
+    elif method == 'list_instance':
+        cf_str = arg['metric']
+        rs = api.get_instances_list(cf_str)
+        return rs
+    elif method == 'update_alert_policy':
         print '*' * 60
         print "update_alert_policy:", msg['args']
         
-        ret = {'code': 0,
-         'message': 'success',
-         'data':None
-        }
-        socket.send_multipart(
-                        [msg_type, msg_uuid, json.dumps(ret)]
-                        )
-    elif msg[0] == 'G':
-        print '*' * 60
-        print "recv:", msg
-        row_id = msg[1]
-        cf_str = msg[2]
-        scf_str = msg[3]
-        rs, count, _ = api.get_by_key(row_id, cf_str, scf_str)
-        ret = {'code': 0,
-         'message': 'success',
-         'data':rs
-        }
-        socket.send_multipart(
-                        [msg_type, msg_uuid, json.dumps(ret)]
-                        )
-    elif msg[0] == 'K':
-        print '*' * 60
-        print "recv:", msg
-        row_id = msg[1]
-        cf_str = msg[2]
-        rs, count, _ = api.get_by_instance_id(row_id, cf_str)
-        ret = {'code': 0,
-         'message': 'success',
-         'data':rs
-        }
-        socket.send_multipart(
-                        [msg_type, msg_uuid, json.dumps(ret)]
-                        )
-    elif msg[0] == 'L':
-        cf_str = msg[1]
-        rs = api.get_instances_list(cf_str)
-        ret = {'code': 0,
-         'message': 'success',
-         'data':rs
-        }
-        socket.send_multipart(
-                        [msg_type, msg_uuid, json.dumps(ret)]
-                        )
+        return None
     else:
-        socket.send_multipart(
-                        [msg_type, msg_uuid, json.dumps(
-                        {'code': 500,
-                         'message': 'Request failed.',
-                         'data':None,
-                        })]
-                        )
+        return None
 
 
 if __name__ == '__main__':
@@ -122,7 +70,8 @@ if __name__ == '__main__':
                 continue
             if not msg.has_key('args'):
                 continue
-            on_message_receive(api, socket, msg_type, msg_uuid, msg)
+            resp = on_message_receive(api, msg['method'], msg['args'])
+            socket.send_multipart([msg_type, msg_uuid, json.dumps(resp)])
         except Exception, e:
             traceback.print_exc()
             print "[EXP]", message

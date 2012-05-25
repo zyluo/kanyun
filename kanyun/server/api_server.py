@@ -211,8 +211,10 @@ class ApiServer():
         time_from = time_to - 24 * 60 * 60
         db = self.get_db()
         
-        rs = db.get_range(cf_str)
+        rs = db.get_range2(cf_str, row_count=20)
+        return list(rs)
         if not rs is None:
+            print rs
             for i in rs:
                 ret.append(i[0])
         
