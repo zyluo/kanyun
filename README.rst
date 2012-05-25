@@ -8,8 +8,8 @@ worker模块负责采集监控数据并交由data-server进行存储，APIserver
 
 kanyun采集的数据可以由dashboard进行展示，或者由计费系统（如dough）计费使用。
 
-拓扑::
-
+拓扑
+----
 
 总览::
 
@@ -55,12 +55,13 @@ Server::
 在nova-compute节点上启动kanyun-worker
 
 通讯协议
+------
 
 数据通讯全部使用json格式
 
 
 外网流量采集模块--->worker
-
+------------------------
 
 格式::
 
@@ -94,7 +95,7 @@ Server::
     其中cpu和mem为实际使用量
 
 worker-->server
-
+----------------
 
 格式::
 
@@ -106,7 +107,7 @@ worker-->server
         TRAFFIC_ACCOUNTING = '2'
         AGENT = '3'
 
-示例::
+示例
 
 心跳::
     ['WORKER1', time.time(), status]
@@ -125,7 +126,7 @@ worker-->server
     ]
 
 server-->cassandra
-
+--------------------
 
 格式::
 
@@ -138,7 +139,7 @@ server-->cassandra
     instance_id, {'total': {1332831360: 131072}}
 
 billing -->API server
-
+--------------------
 
 格式::
 
@@ -177,9 +178,9 @@ billing -->API server
     'avg'
     'sam'(暂时不支持)
 
-示例::
+示例
 
-协议请求数据示例
+协议请求数据示例::
 
     ['msg_type', 'uuid', {
         'method': 'query_usage_report',
@@ -194,7 +195,7 @@ billing -->API server
             }
         }
     ]
-api_client示例
+api_client示例::
 
     api-client instance-00000001@pyw.novalocal cpu total sum 5 2012-02-20T12:12:12 2012-06-20T12:12:12
 
@@ -211,7 +212,7 @@ api_client示例
 API server--> billing
 
 
-格式：
+格式::
 
     ['msg_type', 'uuid',
         {'code': 0,
@@ -220,14 +221,14 @@ API server--> billing
         }
     ]
 
-示例：
+示例::
 
     [ {"1332897600.0": 10} ]
 
 数据库
 
 
-结构：
+结构::
 
     +--------------+
     | cf=vmnetwork |
@@ -250,8 +251,9 @@ API server--> billing
     +==================================================+
 
 建库
+----
 
-可以在数据库本地使用cassandra-cli -h 127.0.0.1连接数据库并执行以下命令建库：
+可以在数据库本地使用cassandra-cli -h 127.0.0.1连接数据库并执行以下命令建库::
 
     CREATE keyspace DATA;
     USE DATA;
@@ -474,7 +476,7 @@ schema::
       AND row_cache_provider = 'SerializingCacheProvider'
       AND compaction_strategy = 'org.apache.cassandra.db.compaction.SizeTieredCompactionStrategy';
 
-配置文件样例
+配置文件样例::
 
     bin/kanyun.conf
     [log]
