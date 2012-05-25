@@ -105,9 +105,13 @@ def get_traffic_accounting_info():
     return ret
 
 if __name__=='__main__':
+    import time
+    import sys
+    interval = 2
+    if len(sys.argv) == 2:
+        interval = int(sys.argv[1])
     while True:
-        for info in get_traffic_accounting_info().iteritems():
-            print info
+        for k, info in get_traffic_accounting_info().iteritems():
+            print k, info
 
-        import time
-        time.sleep(2)
+        time.sleep(interval)
