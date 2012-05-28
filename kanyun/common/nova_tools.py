@@ -50,7 +50,7 @@ class NovaTools():
         else:
             return None
         rs = stmt.execute()
-        if not rs is None:
+        if not rs is None and not rs.first() is None:
             row = rs.first()
             return (row[4], row[34], row[26])
         return None

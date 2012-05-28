@@ -35,7 +35,7 @@ def show_usage():
     print "usage:"
     print "\t  -n   : list network traffic, option=time-interval"
     print "\t  -vm  : list virtualmachine info, option=time-interval"
-    print "\t  -vi <uuid> : get vm info"
+    print "\t  -vi <id> : get vm info"
     print "example:"
     print "\t kanyun -vi instance-00000166"
 
@@ -57,7 +57,7 @@ def vminfo(app, instanceid):
     tool = NovaTools(app)
     id = tool.get_id(instanceid)
     rs = tool.get_instances(id=id)
-    print rs
+    return rs
     
 def main():
     if len(sys.argv) == 1:
@@ -69,9 +69,6 @@ def main():
             return
     
     app = App(conf="kanyun.conf", log='/tmp/kanyun.log')
-    cfg = app.get_cfg('kanyun')
-    if cfg is None:
-        cfg = dict({"api_host":"0.0.0.0", "api_port":"5400"})
     
     if len(sys.argv) == 2:
         if sys.argv[1] == '-n':
