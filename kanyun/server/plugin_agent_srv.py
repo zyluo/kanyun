@@ -113,7 +113,14 @@ def parse_multi(db, raw_cf_str, instance_id, value, keypath, scf_str):
     print '\t%s=%s saved\n\t%s=%s saved' % (prekey1, str(val1), prekey2, str(val2))
     #print '\tkey=%s, cf=%s/%s 2 records saved' % (instance_id, cf_str1, cf_str2)
 
-
+def get_uuid(instance_id):
+    # 1.open nova.mysql
+    # 2.get id from instance_id
+    # 3.select uuid from instances where id=id
+    # 4. return uuid
+    
+    return instance_id
+    
 def plugin_decoder_agent(db, data):
     """decoder the agent data, and save into cassandra database.
     # db: cassandra ConnectionPool
@@ -144,6 +151,9 @@ def plugin_decoder_agent(db, data):
     val1 = 0
     val2 = 0
     for instance_id, data in data.iteritems():
+        # TODO:translate instance_id to instance_uuid
+        instance_id = get_uuid(instance_id)
+        
         keypath = '/' # use for previous_data's key
         keypath += instance_id
 #        print '***** instance=%s:%d ColumnFamilys *****' % (instance_id, len(cfs))

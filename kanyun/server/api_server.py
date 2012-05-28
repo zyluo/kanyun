@@ -151,7 +151,8 @@ class ApiServer():
         count = 0 if rs is None else len(rs)
         
         ret = rs, count, False if (count == 20000) else True
-        self.buf.save(bufkey, ret)
+        if not rs is None:
+            self.buf.save(bufkey, ret)
         
         return ret
         
@@ -313,7 +314,7 @@ class ApiServer():
             ret_len = 0
             
         result = ret, ret_len, all_data
-        if (time.time() - time_to > 120):
+        if (not result is None and time.time() - time_to > 120):
             self.buf.cleanup()
             self.buf.save(bufkey, result)
         return result

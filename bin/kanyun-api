@@ -65,12 +65,19 @@ if __name__ == '__main__':
     while True:
         msg_type, msg_uuid, message = socket.recv_multipart()
         try:
+            data = dict()
             msg = json.loads(message)
-            if not msg.has_key('method'):
+            if not msg.has_key('method') or not msg.has_key("args"):
+                socket.send_multipart([msg_type, msg_uuid, json.dumps(data)])
                 continue
-            if not msg.has_key('args'):
-                continue
-            resp = on_message_receive(api, msg['method'], msg['args'])
+            data = on_message_receive(api, msg['method'], msg['args'])
+            if data is None:
+                data = dict()
+            print "response:", data
+            resp = {'code': 200,
+                    'message': 'Success',
+                    'data': data,
+                   }
             socket.send_multipart([msg_type, msg_uuid, json.dumps(resp)])
         except Exception, e:
             traceback.print_exc()

@@ -26,12 +26,18 @@ from collections import OrderedDict
 from kanyun.worker.worker import *
 from kanyun.worker.plugin_traffic_accounting import *
 from kanyun.worker import plugin_agent
+from kanyun.common.nova_tools import *
+from kanyun.common.app import *
 
 def show_usage():
     print "usage:"
     print "\tkanyun <param> [option]"
+    print "usage:"
     print "\t  -n   : list network traffic, option=time-interval"
     print "\t  -vm  : list virtualmachine info, option=time-interval"
+    print "\t  -vi <uuid> : get vm info"
+    print "example:"
+    print "\t kanyun -vi instance-00000166"
 
 def vm(interval=60):
     while True:
@@ -47,6 +53,12 @@ def network(interval=60):
 
         time.sleep(interval)
 
+def vminfo(app, instanceid):
+    tool = NovaTools(app)
+    id = tool.get_id(instanceid)
+    rs = tool.get_instances(id=id)
+    print rs
+    
 def main():
     if len(sys.argv) == 1:
         show_usage()
@@ -55,6 +67,11 @@ def main():
         if sys.argv[1] in ['--help', "-h", "?"]:
             show_usage()
             return
+    
+    app = App(conf="kanyun.conf", log='/tmp/kanyun.log')
+    cfg = app.get_cfg('kanyun')
+    if cfg is None:
+        cfg = dict({"api_host":"0.0.0.0", "api_port":"5400"})
     
     if len(sys.argv) == 2:
         if sys.argv[1] == '-n':
@@ -69,9 +86,11 @@ def main():
         if sys.argv[1] == '-n':
             network(interval=int(option))
             return
-        if sys.argv[1] == '-vm':
+        elif sys.argv[1] == '-vm':
             vm(interval=int(option))
             return
+        elif sys.argv[1] == '-vi':
+            print vminfo(app=app, instanceid=option)
         else:
             return
     else:
