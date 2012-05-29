@@ -29,7 +29,7 @@ from kanyun.database.cassadb import CassaDb
 import plugin_agent_srv
 from kanyun.common.const import *
 from kanyun.common.app import *
-#from kanyun.common.nova_tools import *
+from kanyun.common.nova_tools import *
 
 """
 Save the vm's system info data to db.
@@ -40,8 +40,8 @@ living_status = dict()
 
 app = App(conf="kanyun.conf", log="/tmp/kanyun-server.log")
 logger = app.get_logger()
-#tool = NovaTools(app)
-tool = None
+#tool = None
+tool = NovaTools(app)
 
 class LivingStatus():
 
@@ -151,10 +151,15 @@ def plugin_decoder_traffic_accounting(app, db, data):
         return
     
     logger.debug('save traffic data:%s' % (data))
-    for i in data:
-        # instance_uuid = tool.get_uuid_by_novaid(nova_id)
+#    for i in data:
+#        # instance_uuid = tool.get_uuid_by_novaid(nova_id)
+#        if len(i) > 0 and len(data[i]) > 2:
+#            db.insert('vmnetwork', i, {data[i][0]: {data[i][1]: data[i][2]}})
+    for nova_id, i in data.iteritems():
+        instance_uuid = tool.get_uuid_by_novaid(nova_id)
+        print nova_id, "-->", instance_id
         if len(i) > 0 and len(data[i]) > 2:
-            db.insert('vmnetwork', i, {data[i][0]: {data[i][1]: data[i][2]}})
+            db.insert('vmnetwork', instance_uuid, {i[0]: {i[1]: i[2]}})
 
 
 def SignalHandler(sig, id):

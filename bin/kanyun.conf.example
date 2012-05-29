@@ -1,6 +1,9 @@
 [log]
 file: /tmp/kanyun.log
 
+[DEFAULT]
+sql_connection: <copy from /etc/nova/nova.conf>
+
 [server]
 host: *
 port: 5551

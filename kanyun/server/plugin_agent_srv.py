@@ -161,9 +161,9 @@ def plugin_decoder_agent(tool, db, data):
     val2 = 0
     for nova_id, data in data.iteritems():
         # TODO:translate instance_id to instance_uuid
-#        instance_id = get_uuid(tool, nova_id)
-#        print nova_id, "-->", instance_id
-        instance_id = nova_id
+#        instance_id = nova_id
+        instance_id = get_uuid(tool, nova_id)
+        print nova_id, "-->", instance_id
         
         keypath = '/' # use for previous_data's key
         keypath += instance_id
