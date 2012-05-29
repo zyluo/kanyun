@@ -158,7 +158,7 @@ def plugin_decoder_traffic_accounting(app, db, data):
     for nova_id, i in data.iteritems():
         instance_uuid = tool.get_uuid_by_novaid(nova_id)
         print nova_id, "-->", instance_id
-        if len(i) > 0 and len(data[i]) > 2:
+        if len(i) > 2:
             db.insert('vmnetwork', instance_uuid, {i[0]: {i[1]: i[2]}})
 
 
