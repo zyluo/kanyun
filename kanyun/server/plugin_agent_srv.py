@@ -81,13 +81,17 @@ def parse_single(db, raw_cf_str, instance_id, value, keypath, scf_str):
     prekey = keypath + '/' + cf_str + '/' + scf_str
     if cf_str in ['cpu']:
         val1 = value[1]
-        print "\tID=%s cpu usage=%.02f%%" % (instance_id, float(val1))
+        print "\tID=%s cpu usage=%.02f%%" \
+               % (instance_id, float(val1))
     else:
         val1 = get_change(prekey, value[1])
     
     previous_data[prekey + '/1'] = (value[1], val1, instance_id, cf_str, scf_str)
     db.insert(cf_str, instance_id, {scf_str: {int(value[0]): str(val1)}})
     #print '\tbuf %s saved:key=%s, cf=%s' % (prekey + '/1', instance_id, cf_str)
+    return [
+        (cf_str, instance_id, {scf_str: {int(value[0]): str(val1)}})
+        ]
 
 
 def parse_multi(db, raw_cf_str, instance_id, value, keypath, scf_str):
@@ -112,16 +116,21 @@ def parse_multi(db, raw_cf_str, instance_id, value, keypath, scf_str):
     db.insert(cf_str2, instance_id, {scf_str: {int(value[0]): str(val2)}})
     print '\t%s=%s saved\n\t%s=%s saved' % (prekey1, str(val1), prekey2, str(val2))
     #print '\tkey=%s, cf=%s/%s 2 records saved' % (instance_id, cf_str1, cf_str2)
+    return [
+            (cf_str1, instance_id, {scf_str: {int(value[0]): str(val1)}})
+            , (cf_str2, instance_id, {scf_str: {int(value[0]): str(val2)}})
+            ]
 
-def get_uuid(instance_id):
+def get_uuid(tool, nova_id):
     # 1.open nova.mysql
     # 2.get id from instance_id
     # 3.select uuid from instances where id=id
     # 4. return uuid
+    instance_uuid = tool.get_uuid_by_novaid(nova_id)
     
-    return instance_id
+    return instance_uuid
     
-def plugin_decoder_agent(db, data):
+def plugin_decoder_agent(tool, db, data):
     """decoder the agent data, and save into cassandra database.
     # db: cassandra ConnectionPool
     # data example: 
@@ -141,22 +150,22 @@ def plugin_decoder_agent(db, data):
     if len(data) <= 0:
         print 'invalid data:', data
         
-        return
+        return False
         
     if db is None:
-        return
+        return False
     
     pass_time = time.time()
     pre_data = None
     val1 = 0
     val2 = 0
-    for instance_id, data in data.iteritems():
+    for nova_id, data in data.iteritems():
         # TODO:translate instance_id to instance_uuid
-        instance_id = get_uuid(instance_id)
+        instance_id = get_uuid(tool, nova_id)
+        print nova_id, "-->", instance_id
         
         keypath = '/' # use for previous_data's key
         keypath += instance_id
-#        print '***** instance=%s:%d ColumnFamilys *****' % (instance_id, len(cfs))
 
         for i in data:
             # i is ["cpu", "total", [1332465360.033008, 9043400000000]], 
@@ -169,10 +178,11 @@ def plugin_decoder_agent(db, data):
                 parse_multi(db, i[0], instance_id, value, keypath, scf_str)
             else:
                 print 'Not support type:', i[0]
-                return
+                return False
 
     print '\t%d buffer, spend \033[1;33m%f\033[0m seconds' % (len(previous_data), time.time() - pass_time)
     print '-' * 60
+    return True
     
     
 if __name__ == '__main__':

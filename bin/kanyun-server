@@ -86,7 +86,7 @@ if __name__ == '__main__':
                 print 'recv(%s):%s' % (msg_type, report_str)
                 data = json.loads(report_str)
                 try:
-                    plugins[msg_type](db, data)
+                    plugins[msg_type](app=app, db=db, data=data)
                 except:
                     traceback.print_exc()
             else:

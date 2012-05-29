@@ -32,7 +32,7 @@ from kanyun.common.app import *
 def show_usage():
     print "usage:"
     print "\tkanyun <param> [option]"
-    print "usage:"
+    print "param:"
     print "\t  -n   : list network traffic, option=time-interval"
     print "\t  -vm  : list virtualmachine info, option=time-interval"
     print "\t  -vi <id> : get vm info"

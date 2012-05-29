@@ -31,7 +31,7 @@ from nova import utils
 def list_instance_ip():
     ret = dict()
     admin_ctxt = context.get_admin_context()
-    CMD = "virsh list"
+    CMD = "sudo virsh list"
     buf = subprocess.check_output(shlex.split(CMD), stderr=subprocess.STDOUT)
     buf = buf.split('\n')
     buf = buf[2:]
@@ -80,12 +80,12 @@ def main():
     cmd1 = """iptables -t filter -N nova-compute-f-inst-%s"""
     cmd2 = """iptables -I FORWARD -s %s -j nova-compute-f-inst-%s"""
     cmd3 = """iptables -A nova-compute-f-inst-%s -o %s -m comment --comment %s %s accounting rule """
-    utils.default_flagfile()
-    try:
-        flags.FLAGS(sys.argv[:2])
-    except:
-        print 'sudo...'
-        return
+#    utils.default_flagfile()
+#    try:
+#        flags.FLAGS(sys.argv[:2])
+#    except:
+#        print 'sudo...'
+#        return
 
     ret = list_instance_ip()
     has_error = False
@@ -93,6 +93,7 @@ def main():
         for k, (n, ip) in ret.iteritems():
             cmd = cmd1 % (k)
             try:
+                print cmd
                 os.system(cmd)
             except:
                 has_error = True
@@ -100,14 +101,16 @@ def main():
                 
             cmd = cmd2 % (ip, k)
             try:
+                print cmd
                 os.system(cmd)
             except:
                 has_error = True
                 print cmd
                 traceback.print_stack()
-                
+                    
             cmd = cmd3 % (k, 'br100', k, ip)
             try:
+                print cmd
                 os.system(cmd)
             except:
                 has_error = True

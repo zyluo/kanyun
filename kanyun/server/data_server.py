@@ -29,6 +29,7 @@ from kanyun.database.cassadb import CassaDb
 import plugin_agent_srv
 from kanyun.common.const import *
 from kanyun.common.app import *
+from kanyun.common.nova_tools import *
 
 """
 Save the vm's system info data to db.
@@ -39,7 +40,8 @@ living_status = dict()
 
 app = App(conf="kanyun.conf", log="/tmp/kanyun-server.log")
 logger = app.get_logger()
-            
+tool = NovaTools(app)
+
 class LivingStatus():
 
     def __init__(self, worker_id='1'):
@@ -114,7 +116,7 @@ def list_workers():
     print len(living_status), "workers."
     
     
-def plugin_heartbeat(db, data):
+def plugin_heartbeat(app, db, data):
     if data is None or len(data) < 3:
         logger.debug("[ERR]invalid heartbeat data")
         return
@@ -129,26 +131,27 @@ def plugin_heartbeat(db, data):
         del living_status[worker_id]
 
 
-def plugin_decoder_agent(db, data):
+def plugin_decoder_agent(app, db, data):
     if data is None or len(data) <= 0:
         logger.debug('invalid data:%s' % (data))
         return
         
     pass_time = time.time()
-    plugin_agent_srv.plugin_decoder_agent(db, data)
+    plugin_agent_srv.plugin_decoder_agent(tool, db, data)
     print 'spend \033[1;33m%f\033[0m seconds' % (time.time() - pass_time)
     print '-' * 60
     
     
-def plugin_decoder_traffic_accounting(db, data):
+def plugin_decoder_traffic_accounting(app, db, data):
     # protocol:{'instance-00000001': ('10.0.0.2', 1332409327, '0')}
     # verify the data
     if data is None or len(data) <= 0:
         logger.debug('invalid data:%s' % (data))
         return
     
-    logger.debug('save data:%s' % (data))
+    logger.debug('save traffic data:%s' % (data))
     for i in data:
+        # instance_uuid = tool.get_uuid_by_novaid(nova_id)
         if len(i) > 0 and len(data[i]) > 2:
             db.insert('vmnetwork', i, {data[i][0]: {data[i][1]: data[i][2]}})
 

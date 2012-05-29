@@ -36,10 +36,21 @@ class NovaTools():
         metadata = MetaData(self.db)
         self.instances = Table('instances', metadata, autoload=True)
         
-    def get_id(self, instance):
-        if len(instance) < 10:
+    def get_uuid_by_novaid(self, instance):
+        ret = self.get_id(instance)
+        if ret is None:
             return None
-        return int(instance[9:], 16)
+            
+        ret = self.get_instances(id=ret)
+        if ret is None:
+            return None
+            
+        return ret[1]
+        
+    def get_id(self, instance):
+        if len(instance) < 17:
+            return None
+        return int(instance[9:17], 16)
         
     def get_instances(self, uuid=None, id=None):
         "return format: (id, uuid, display_name) or None"
@@ -50,8 +61,10 @@ class NovaTools():
         else:
             return None
         rs = stmt.execute()
-        if not rs is None and not rs.first() is None:
+        if not rs is None:
             row = rs.first()
+            if row is None:
+                return None
             return (row[4], row[34], row[26])
         return None
         
