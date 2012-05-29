@@ -74,8 +74,8 @@ class LibvirtMonitor(object):
         infos_by_dom_name = dict()
         for dom_id in self.conn.listDomainsID():
             dom_conn = self.conn.lookupByID(dom_id)
-#            dom_key = "%s@%s" % (dom_conn.name(), self.hostname)
-            dom_key = dom_conn.name()
+            dom_key = "%s@%s" % (dom_conn.name(), self.hostname)
+#            dom_key = dom_conn.name()
             dom_xml = dom_conn.XMLDesc(0)
             print "-" * 60
             print dom_key

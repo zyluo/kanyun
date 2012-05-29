@@ -29,7 +29,7 @@ from kanyun.database.cassadb import CassaDb
 import plugin_agent_srv
 from kanyun.common.const import *
 from kanyun.common.app import *
-from kanyun.common.nova_tools import *
+#from kanyun.common.nova_tools import *
 
 """
 Save the vm's system info data to db.
@@ -40,7 +40,8 @@ living_status = dict()
 
 app = App(conf="kanyun.conf", log="/tmp/kanyun-server.log")
 logger = app.get_logger()
-tool = NovaTools(app)
+#tool = NovaTools(app)
+tool = None
 
 class LivingStatus():
 
