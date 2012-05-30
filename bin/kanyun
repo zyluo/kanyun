@@ -36,6 +36,7 @@ def show_usage():
     print "\t  -n   : list network traffic, option=time-interval"
     print "\t  -vm  : list virtualmachine info, option=time-interval"
     print "\t  -vi <id> : get vm info"
+    print "\t  -cmd <instance_id> <instance_ip> <public_interface>"
     print "example:"
     print "\t kanyun -vi instance-00000166"
 
@@ -59,12 +60,27 @@ def vminfo(app, instanceid):
     rs = tool.get_instances(id=id)
     return rs
     
+def show_iptables_cmd(instance_id, instance_ip, public_interface):
+    cmd1 = """sudo iptables -t filter -N nova-compute-f-inst-%s"""
+    cmd2 = """sudo iptables -I FORWARD -s %s -j nova-compute-f-inst-%s"""
+    cmd3 = """sudo iptables -A nova-compute-f-inst-%s -o %s -m comment --comment "%s %s accounting rule" """
+    print cmd1 % instance_id
+    print cmd2 % (instance_ip, instance_id)
+    print cmd3 % (instance_id, public_interface, instance_id, instance_ip)
+    print "Use 'sudo iptables -n -L|grep Chain|grep nova-compute' to look the policy."
+
 def main():
     if len(sys.argv) == 1:
         show_usage()
         return
     if len(sys.argv) == 2:
-        if sys.argv[1] in ['--help', "-h", "?"]:
+        if sys.argv[1] in ['--help', "-h"]:
+            print "sudo iptables-save -t filter -c|grep accounting rule"
+            print "Use 'sudo virsh list' to look the list of instances."
+            print "Use 'sudo virsh dumpxml <id>|grep IP' to look the ipaddress of instance."
+            show_usage()
+            return
+        elif sys.argv[1] in ["?"]:
             show_usage()
             return
     
@@ -87,9 +103,21 @@ def main():
             vm(interval=int(option))
             return
         elif sys.argv[1] == '-vi':
-            print vminfo(app=app, instanceid=option)
+            rs = vminfo(app=app, instanceid=option)
+            print "id          : ", rs[0]
+            print "uuid        : ", rs[1]
+            print "display_name: ", rs[2]
         else:
             return
+    elif len(sys.argv) == 5:
+        if sys.argv[1] == '-cmd':
+            instance_id = sys.argv[2]
+            instance_ip = sys.argv[3]
+            public_interface = sys.argv[4]
+            show_iptables_cmd(
+                            instance_id=instance_id, 
+                            instance_ip=instance_ip, 
+                            public_interface=public_interface)
     else:
         pass
     

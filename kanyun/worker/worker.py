@@ -58,6 +58,8 @@ def plugin_traffic_accounting_info(worker_id):
     info = plugin_traffic_accounting.get_traffic_accounting_info()
     if len(info) <= 0:
         return MSG_TYPE.TRAFFIC_ACCOUNTING, {}
+    print "-"*30, "traffic", "-" * 30
+    print info
     return MSG_TYPE.TRAFFIC_ACCOUNTING, info
 
 

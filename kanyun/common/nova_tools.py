@@ -50,7 +50,13 @@ class NovaTools():
     def get_id(self, instance):
         if len(instance) < 17:
             return None
-        return int(instance[9:17], 16)
+            
+        ret = None
+        try:
+            ret = int(instance[9:17], 16)
+        except:
+            ret = None
+        return ret
         
     def get_instances(self, uuid=None, id=None):
         "return format: (id, uuid, display_name) or None"

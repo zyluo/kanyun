@@ -77,7 +77,7 @@ class LibvirtMonitor(object):
 #            dom_key = "%s@%s" % (dom_conn.name(), self.hostname)
             dom_key = dom_conn.name()
             dom_xml = dom_conn.XMLDesc(0)
-            print "-" * 60
+            print "-"*30, "vminfo", "-" * 30
             print dom_key
             # get infos
             infos = list()
