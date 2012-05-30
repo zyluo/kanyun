@@ -83,7 +83,7 @@ if __name__ == '__main__':
             
             if plugins.has_key(msg_type) and len(report) > 0:
                 report_str = ''.join(report)
-                print 'recv(%s):%s' % (msg_type, report_str)
+#                print 'recv(%s):%s' % (msg_type, report_str)
                 data = json.loads(report_str)
                 try:
                     plugins[msg_type](app=app, db=db, data=data)

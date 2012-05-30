@@ -80,8 +80,8 @@ def parse_single(db, raw_cf_str, instance_id, value, keypath, scf_str):
     # get change
     prekey = keypath + '/' + cf_str + '/' + scf_str
     if cf_str in ['cpu']:
-        val1 = value[1]
-        print "\tID=%s cpu usage=%.02f%%" \
+        val1 = value[1] # cpu_usage
+        print "\tID=%s cpu usage=\033[1;32m%.02f%%\033[0m" \
                % (instance_id, float(val1))
     else:
         val1 = get_change(prekey, value[1])
@@ -104,17 +104,19 @@ def parse_multi(db, raw_cf_str, instance_id, value, keypath, scf_str):
     prekey1 = keypath + '/' + cf_str1 + '/' + scf_str
     prekey2 = keypath + '/' + cf_str2 + '/' + scf_str
     if raw_cf_str in ['mem']:
-        val1 = value[1]
-        val2 = value[2]
-        print "\tID=%s useable mem %d/%d" % (instance_id, int(val1), int(val2))
+        val1 = value[1] # max
+        val2 = value[2] # free
+#        print "\tID=%s useable mem \033[1;32m%d/%d\033[0m" \
+#                % (instance_id, int(val2), int(val1))
     else:
-        val1 = get_change(prekey1, value[1])
-        val2 = get_change(prekey2, value[2])
+        val1 = get_change(prekey1, value[1]) # nic_incoming / blk_read
+        val2 = get_change(prekey2, value[2]) # nic_outgoing / blk_write
         previous_data[prekey1] = (value[1], val1, instance_id, cf_str1, scf_str)
         previous_data[prekey2] = (value[2], val2, instance_id, cf_str2, scf_str)
     db.insert(cf_str1, instance_id, {scf_str: {int(value[0]): str(val1)}})
     db.insert(cf_str2, instance_id, {scf_str: {int(value[0]): str(val2)}})
-    print '\t%s=%s saved\n\t%s=%s saved' % (prekey1, str(val1), prekey2, str(val2))
+    print '\t%s=\033[1;32m%s\033[0m saved\n\t%s=\033[1;32m%s\033[0m saved' \
+            % (prekey1, str(val1), prekey2, str(val2))
     #print '\tkey=%s, cf=%s/%s 2 records saved' % (instance_id, cf_str1, cf_str2)
     return [
             (cf_str1, instance_id, {scf_str: {int(value[0]): str(val1)}})

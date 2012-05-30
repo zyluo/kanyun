@@ -67,8 +67,8 @@ def main():
     worker = Worker(worker_id=wid)
     # TODO: the plugin come form configure file maybe better
     worker.register_plugin(plugin_heartbeat)
-    worker.register_plugin(plugin_traffic_accounting_info)
     worker.register_plugin(plugin_agent_info)
+    worker.register_plugin(plugin_traffic_accounting_info)
 
     print "Starting worker..."
     print "id=%s" % (worker.worker_id)

@@ -75,7 +75,7 @@ def main():
         return
     if len(sys.argv) == 2:
         if sys.argv[1] in ['--help', "-h"]:
-            print "sudo iptables-save -t filter -c|grep accounting rule"
+            print "sudo iptables-save -t filter -c|grep 'accounting rule'"
             print "Use 'sudo virsh list' to look the list of instances."
             print "Use 'sudo virsh dumpxml <id>|grep IP' to look the ipaddress of instance."
             show_usage()
